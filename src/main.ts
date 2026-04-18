@@ -1,7 +1,23 @@
 import { Game } from './game';
+import { isMuted, setMuted } from './audio';
 import './style.css';
 
 const app = document.getElementById('app')!;
+
+// Mute toggle (top-right corner, always on top)
+const muteBtn = document.createElement('button');
+muteBtn.className = 'mute-btn';
+muteBtn.setAttribute('aria-label', '靜音切換');
+const updateMuteIcon = () => {
+  muteBtn.textContent = isMuted() ? '🔇' : '🔊';
+};
+updateMuteIcon();
+muteBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  setMuted(!isMuted());
+  updateMuteIcon();
+});
+document.body.appendChild(muteBtn);
 
 // Orientation nag for portrait phones
 const nag = document.createElement('div');

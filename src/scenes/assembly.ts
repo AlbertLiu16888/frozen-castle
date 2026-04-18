@@ -5,6 +5,8 @@
  * When all 5 snapped, the "done" button appears.
  */
 
+import { speak, speakRandom } from '../audio';
+
 interface Piece {
   id: string;
   label: string;
@@ -68,6 +70,7 @@ export function renderAssembly(onDone: () => void): HTMLElement {
 
   // Reset when re-entering
   scene.addEventListener('scene:enter', () => {
+    speak('把積木拖到亮亮的地方，把城堡蓋好！');
     pieces.forEach((p) => (p.snapped = false));
     doneBtn.style.display = 'none';
     stage.querySelectorAll('.target-slot').forEach((s) => s.classList.remove('filled'));
@@ -157,6 +160,9 @@ function makeDraggable(p: Piece, all: Piece[], stage: HTMLElement, doneBtn: HTML
       if (all.every((x) => x.snapped)) {
         doneBtn.style.display = '';
         playFanfare();
+        speak('太棒了！城堡蓋好了！');
+      } else {
+        speakRandom(['好棒！', '對了！', '很厲害！', '再一個！']);
       }
     }
   };

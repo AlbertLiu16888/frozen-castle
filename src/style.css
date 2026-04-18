@@ -268,6 +268,9 @@ body {
   height: min(65vh, 560px);
   margin: auto;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .castle-svg {
@@ -286,17 +289,38 @@ body {
 }
 
 .castle-canvas {
-  width: 100%;
-  height: 100%;
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
+  width: auto;
+  height: auto;
   cursor: crosshair;
   background: white;
   border-radius: 24px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   touch-action: manipulation;
   image-rendering: auto;
+  display: block;
+}
+
+.next-page-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 4;
+  padding: 0.5rem 1rem;
+  border: 2px solid white;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.next-page-btn:active {
+  transform: scale(0.95);
 }
 
 .palette {
@@ -399,6 +423,34 @@ body {
 .scene-ending .scene-content {
   z-index: 5;
   margin-top: -5vh;
+}
+
+/* Mute toggle */
+.mute-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10000;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 3px solid white;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 1.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 150ms ease;
+}
+
+.mute-btn:active {
+  transform: scale(0.9);
 }
 
 /* Snow particles */

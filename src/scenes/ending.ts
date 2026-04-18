@@ -2,6 +2,8 @@
  * Ending scene: princess appears, fireworks, replay button.
  */
 
+import { speak } from '../audio';
+
 export function renderEnding(onReplay: () => void): HTMLElement {
   const scene = document.createElement('div');
   scene.className = 'scene scene-ending';
@@ -42,6 +44,7 @@ export function renderEnding(onReplay: () => void): HTMLElement {
   scene.addEventListener('scene:enter', () => {
     launchFireworks(fireworks);
     playFanfare();
+    speak('你好厲害！公主最喜歡你的城堡了！');
   });
 
   return scene;

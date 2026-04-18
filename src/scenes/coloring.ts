@@ -1,16 +1,35 @@
 /**
- * Scene 2: Magic Wand Coloring
+ * Scene 2: Magic Wand Coloring — storybook mode
  *
- * Primary: load Grok-generated castle line art (./assets/castle-lineart.png) onto a canvas
- * and use scanline flood fill to paint each enclosed region on tap.
+ * On each entry, picks a random Grok-generated coloring page from ./assets/coloring-*.png.
+ * The page is loaded to a canvas, binarized, and scanline flood-fill handles each tap.
  *
- * Fallback: if the image is missing (Grok not run yet), render a hand-crafted SVG castle
- * with clickable regions so the game is still playable out of the box.
+ * Completion rule: ALL white space must be colored. We track the remaining "unpainted"
+ * pixel count; once it drops below 2% of the initial white area, the done button appears.
+ *
+ * Fallback: if no coloring pages are available (Grok not run yet), render the
+ * hand-crafted SVG castle with clickable regions.
  */
 
-const COLORS = ['#7dd3fc', '#c4b5fd', '#fbcfe8', '#ffffff', '#fde68a', '#86efac'];
-const LINEART_SRC = './assets/castle-lineart.png';
-const MIN_FILLS_TO_FINISH = 4; // toddler friendly — a few fills is enough
+import { speak, speakRandom } from '../audio';
+
+const COLORS = ['#7dd3fc', '#c4b5fd', '#fbcfe8', '#ffffff', '#fde68a', '#86efac', '#fca5a5', '#a5f3fc'];
+
+const PAGES = [
+  './assets/coloring-castle.png',
+  './assets/coloring-princess.png',
+  './assets/coloring-sprite.png',
+  './assets/coloring-snowflake.png',
+  './assets/coloring-wand.png',
+  './assets/coloring-crown.png',
+  './assets/coloring-throne.png',
+  './assets/coloring-sleigh.png',
+  './assets/coloring-forest.png',
+  './assets/coloring-heart.png',
+];
+
+// A region is "colored enough" when less than this fraction of the initial white area remains.
+const DONE_THRESHOLD = 0.02;
 
 export function renderColoring(onDone: () => void): HTMLElement {
   const scene = document.createElement('div');
@@ -23,10 +42,18 @@ export function renderColoring(onDone: () => void): HTMLElement {
 
   const hint = document.createElement('div');
   hint.className = 'scene-hint';
-  hint.textContent = '選顏色 → 點城堡 🎨✨';
+  hint.textContent = '把整張圖都塗滿顏色 🎨✨';
 
   const stage = document.createElement('div');
   stage.className = 'color-stage';
+
+  // Next-page button (top right of stage)
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'next-page-btn';
+  nextBtn.textContent = '換一張 ➡️';
+  nextBtn.addEventListener('click', () => {
+    pickAndLoad();
+  });
 
   const palette = document.createElement('div');
   palette.className = 'palette';
@@ -41,10 +68,12 @@ export function renderColoring(onDone: () => void): HTMLElement {
   doneBtn.style.display = 'none';
   doneBtn.addEventListener('click', onDone);
 
-  // State shared between fill logic and UI
-  const state = { selected: COLORS[0], fillCount: 0, reset: () => {} };
+  const state = {
+    selected: COLORS[0],
+    initialWhite: 0,
+    reset: () => {},
+  };
 
-  // Build palette (shared)
   for (const c of COLORS) {
     const sw = document.createElement('button');
     sw.className = 'swatch';
@@ -60,22 +89,21 @@ export function renderColoring(onDone: () => void): HTMLElement {
     palette.appendChild(sw);
   }
 
-  // Try to load the Grok line art. If OK, use canvas; if not, fall back to SVG.
-  const probe = new Image();
-  probe.onload = () => {
-    setupCanvas(stage, probe, state, doneBtn);
-  };
-  probe.onerror = () => {
-    setupSvg(stage, state, doneBtn);
-  };
-  probe.src = LINEART_SRC;
+  function pickAndLoad(): void {
+    doneBtn.style.display = 'none';
+    const src = PAGES[Math.floor(Math.random() * PAGES.length)];
+    const img = new Image();
+    img.onload = () => setupCanvas(stage, img, state, doneBtn, nextBtn);
+    img.onerror = () => setupSvg(stage, state, doneBtn);
+    img.src = src;
+  }
 
-  scene.append(bg, hint, stage, palette, wand, doneBtn);
+  scene.append(bg, hint, stage, nextBtn, palette, wand, doneBtn);
+  pickAndLoad();
 
   scene.addEventListener('scene:enter', () => {
-    state.fillCount = 0;
-    state.reset();
-    doneBtn.style.display = 'none';
+    speak('把整張圖都塗滿顏色，就算完成囉！');
+    pickAndLoad();
   });
 
   return scene;
@@ -86,27 +114,26 @@ export function renderColoring(onDone: () => void): HTMLElement {
 function setupCanvas(
   stage: HTMLElement,
   lineart: HTMLImageElement,
-  state: { selected: string; fillCount: number; reset: () => void },
+  state: { selected: string; initialWhite: number; reset: () => void },
   doneBtn: HTMLButtonElement,
+  nextBtn: HTMLButtonElement,
 ): void {
   stage.innerHTML = '';
+  stage.appendChild(nextBtn);
 
   const canvas = document.createElement('canvas');
   canvas.className = 'castle-canvas';
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-
-  // Native pixel size = source image. CSS scales it to fit stage.
   canvas.width = lineart.naturalWidth;
   canvas.height = lineart.naturalHeight;
 
-  // Paint base: binarize line art so edges are crisp and "fillable" vs "line" is clear.
-  ctx.drawImage(lineart, 0, 0);
-  binarize(ctx, canvas.width, canvas.height);
-
-  state.reset = () => {
+  const paintBase = () => {
     ctx.drawImage(lineart, 0, 0);
     binarize(ctx, canvas.width, canvas.height);
+    state.initialWhite = countWhitePixels(ctx, canvas.width, canvas.height);
   };
+  paintBase();
+  state.reset = paintBase;
 
   canvas.addEventListener('click', (ev) => {
     const rect = canvas.getBoundingClientRect();
@@ -114,11 +141,16 @@ function setupCanvas(
     const y = Math.floor(((ev.clientY - rect.top) / rect.height) * canvas.height);
     const filled = floodFill(ctx, canvas.width, canvas.height, x, y, hexToRgb(state.selected));
     if (filled > 200) {
-      state.fillCount++;
       sparkleAt(stage, ev.clientX - stage.getBoundingClientRect().left, ev.clientY - stage.getBoundingClientRect().top);
       playDing();
-      if (state.fillCount >= MIN_FILLS_TO_FINISH) {
+      const remaining = countWhitePixels(ctx, canvas.width, canvas.height);
+      if (remaining < state.initialWhite * DONE_THRESHOLD) {
         doneBtn.style.display = '';
+        speak('哇！你把整張都塗滿了，好厲害！');
+      } else {
+        const percent = 1 - remaining / state.initialWhite;
+        if (percent > 0.6 && percent < 0.62) speak('快塗完囉，加油！');
+        else speakRandom(['好漂亮！', '哇喔！', '真美！', '好棒！']);
       }
     }
   });
@@ -132,15 +164,23 @@ function binarize(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   for (let i = 0; i < d.length; i += 4) {
     const avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
     if (avg < 128) {
-      // line → pure black
       d[i] = d[i + 1] = d[i + 2] = 0;
     } else {
-      // fill region → pure white
       d[i] = d[i + 1] = d[i + 2] = 255;
     }
     d[i + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
+}
+
+function countWhitePixels(ctx: CanvasRenderingContext2D, w: number, h: number): number {
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  let count = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i] > 240 && d[i + 1] > 240 && d[i + 2] > 240) count++;
+  }
+  return count;
 }
 
 function floodFill(
@@ -160,9 +200,7 @@ function floodFill(
   const fillable = (x: number, y: number): boolean => {
     const i = idx(x, y);
     const r = d[i], g = d[i + 1], b = d[i + 2];
-    // Skip our own color
     if (r === fr && g === fg && b === fb) return false;
-    // Only fill light pixels (white / pastel existing fill). Black lines block.
     return (r + g + b) / 3 > 160;
   };
   const paint = (x: number, y: number) => {
@@ -222,7 +260,7 @@ const REGIONS: { id: string; path: string }[] = [
 
 function setupSvg(
   stage: HTMLElement,
-  state: { selected: string; fillCount: number; reset: () => void },
+  state: { selected: string; reset: () => void },
   doneBtn: HTMLButtonElement,
 ): void {
   stage.innerHTML = '';
@@ -231,15 +269,6 @@ function setupSvg(
   svg.setAttribute('viewBox', '0 0 800 500');
   svg.setAttribute('class', 'castle-svg');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-
-  const ground = document.createElementNS(svgNS, 'rect');
-  ground.setAttribute('x', '0');
-  ground.setAttribute('y', '460');
-  ground.setAttribute('width', '800');
-  ground.setAttribute('height', '40');
-  ground.setAttribute('fill', '#e0f2fe');
-  ground.setAttribute('opacity', '0.5');
-  svg.appendChild(ground);
 
   const els: SVGPathElement[] = [];
   const filled = new Set<string>();
@@ -257,7 +286,12 @@ function setupSvg(
       filled.add(r.id);
       sparkleAt(stage, (ev as MouseEvent).clientX - stage.getBoundingClientRect().left, (ev as MouseEvent).clientY - stage.getBoundingClientRect().top);
       playDing();
-      if (filled.size >= 5) doneBtn.style.display = '';
+      if (filled.size >= REGIONS.length) {
+        doneBtn.style.display = '';
+        speak('你塗得好漂亮！');
+      } else {
+        speakRandom(['好漂亮！', '哇喔！', '真美！', '好棒！']);
+      }
     });
     svg.appendChild(p);
     els.push(p);

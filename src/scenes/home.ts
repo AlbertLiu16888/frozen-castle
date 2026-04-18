@@ -1,4 +1,5 @@
 import { requestFullscreen } from '../game';
+import { speak, startMusic } from '../audio';
 
 export function renderHome(onStart: () => void): HTMLElement {
   const scene = document.createElement('div');
@@ -24,6 +25,8 @@ export function renderHome(onStart: () => void): HTMLElement {
   btn.textContent = '✨ 開始 ✨';
   btn.addEventListener('click', () => {
     requestFullscreen();
+    startMusic();
+    speak('歡迎來到冰雪魔法城堡！');
     onStart();
   });
 
