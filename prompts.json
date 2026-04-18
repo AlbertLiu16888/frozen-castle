@@ -20,6 +20,12 @@
       "prompt": "An empty snowy hilltop foreground with soft sparkling snow, gentle lavender-to-pink sky behind, distant pastel snow mountains on the horizon, scattered tiny ice crystals glinting, no castle, no buildings, no characters, just a clean snowy stage ready for a castle to be placed on, children's picture book illustration, soft pastel colors (icy blue, lavender, pink), no text"
     },
     {
+      "id": "castle-lineart",
+      "filename": "castle-lineart.png",
+      "used_in": "scene 2 coloring page — the actual castle kids tap to color with flood fill",
+      "prompt": "A children's coloring book page of a cute fairytale ice castle. Style: simple clean THICK BOLD SOLID BLACK outline drawing on a PURE PRISTINE WHITE background. CRITICAL: every region must be FULLY ENCLOSED by continuous unbroken black lines with no gaps, no breaks, no dashed lines — a tiny gap will ruin the coloring experience. The castle should include: one big central castle body with a large arched gate in the middle, two side towers with small round windows, triangular pointed spires on top of each tower and the central roof, a small star or snowflake on each spire tip, and a few separate simple snowflake shapes floating in the sky around the castle. Lines should be thick (about 5-8 pixels wide) like a toddler coloring book. Rounded friendly shapes suitable for ages 3-5. NO shading, NO gray tones, NO colors, NO gradients, NO fills — ONLY pure black lines on pure white paper. No text, no watermarks, no signatures. High contrast, flat 2D, symmetrical castle, centered composition."
+    },
+    {
       "id": "piece-body",
       "filename": "piece-body.png",
       "used_in": "scene 1 castle piece (main building)",

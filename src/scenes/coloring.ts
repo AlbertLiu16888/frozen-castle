@@ -1,21 +1,16 @@
 /**
  * Scene 2: Magic Wand Coloring
- * Castle outline as SVG with fillable regions. Tap a color swatch, then tap a region.
- * When N regions are filled, "done" button appears.
+ *
+ * Primary: load Grok-generated castle line art (./assets/castle-lineart.png) onto a canvas
+ * and use scanline flood fill to paint each enclosed region on tap.
+ *
+ * Fallback: if the image is missing (Grok not run yet), render a hand-crafted SVG castle
+ * with clickable regions so the game is still playable out of the box.
  */
 
 const COLORS = ['#7dd3fc', '#c4b5fd', '#fbcfe8', '#ffffff', '#fde68a', '#86efac'];
-
-const REGIONS: { id: string; path: string; label: string }[] = [
-  { id: 'tower-l',  label: '左塔樓',   path: 'M120,240 L120,460 L220,460 L220,240 L170,200 Z' },
-  { id: 'tower-r',  label: '右塔樓',   path: 'M580,240 L580,460 L680,460 L680,240 L630,200 Z' },
-  { id: 'body',     label: '城堡主體', path: 'M220,280 L220,460 L580,460 L580,280 L400,200 Z' },
-  { id: 'gate',     label: '城門',     path: 'M360,380 Q360,340 400,340 Q440,340 440,380 L440,460 L360,460 Z' },
-  { id: 'spire-l',  label: '左尖頂',   path: 'M120,240 L170,140 L220,240 Z' },
-  { id: 'spire-m',  label: '中尖頂',   path: 'M220,280 L400,120 L580,280 Z' },
-  { id: 'spire-r',  label: '右尖頂',   path: 'M580,240 L630,140 L680,240 Z' },
-  { id: 'window',   label: '窗戶',     path: 'M370,280 Q370,250 400,250 Q430,250 430,280 L430,320 L370,320 Z' },
-];
+const LINEART_SRC = './assets/castle-lineart.png';
+const MIN_FILLS_TO_FINISH = 4; // toddler friendly — a few fills is enough
 
 export function renderColoring(onDone: () => void): HTMLElement {
   const scene = document.createElement('div');
@@ -33,14 +28,210 @@ export function renderColoring(onDone: () => void): HTMLElement {
   const stage = document.createElement('div');
   stage.className = 'color-stage';
 
-  // Build SVG castle
+  const palette = document.createElement('div');
+  palette.className = 'palette';
+
+  const wand = document.createElement('div');
+  wand.className = 'wand';
+  wand.innerHTML = '<span class="star">✨</span>';
+
+  const doneBtn = document.createElement('button');
+  doneBtn.className = 'big-button done-btn';
+  doneBtn.textContent = '完成了！✨';
+  doneBtn.style.display = 'none';
+  doneBtn.addEventListener('click', onDone);
+
+  // State shared between fill logic and UI
+  const state = { selected: COLORS[0], fillCount: 0, reset: () => {} };
+
+  // Build palette (shared)
+  for (const c of COLORS) {
+    const sw = document.createElement('button');
+    sw.className = 'swatch';
+    sw.style.background = c;
+    sw.dataset.color = c;
+    if (c === state.selected) sw.classList.add('active');
+    sw.addEventListener('click', () => {
+      state.selected = c;
+      palette.querySelectorAll('.swatch').forEach((s) => s.classList.remove('active'));
+      sw.classList.add('active');
+      wand.style.color = c;
+    });
+    palette.appendChild(sw);
+  }
+
+  // Try to load the Grok line art. If OK, use canvas; if not, fall back to SVG.
+  const probe = new Image();
+  probe.onload = () => {
+    setupCanvas(stage, probe, state, doneBtn);
+  };
+  probe.onerror = () => {
+    setupSvg(stage, state, doneBtn);
+  };
+  probe.src = LINEART_SRC;
+
+  scene.append(bg, hint, stage, palette, wand, doneBtn);
+
+  scene.addEventListener('scene:enter', () => {
+    state.fillCount = 0;
+    state.reset();
+    doneBtn.style.display = 'none';
+  });
+
+  return scene;
+}
+
+/* ---------------- Canvas flood-fill path (primary) ---------------- */
+
+function setupCanvas(
+  stage: HTMLElement,
+  lineart: HTMLImageElement,
+  state: { selected: string; fillCount: number; reset: () => void },
+  doneBtn: HTMLButtonElement,
+): void {
+  stage.innerHTML = '';
+
+  const canvas = document.createElement('canvas');
+  canvas.className = 'castle-canvas';
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+
+  // Native pixel size = source image. CSS scales it to fit stage.
+  canvas.width = lineart.naturalWidth;
+  canvas.height = lineart.naturalHeight;
+
+  // Paint base: binarize line art so edges are crisp and "fillable" vs "line" is clear.
+  ctx.drawImage(lineart, 0, 0);
+  binarize(ctx, canvas.width, canvas.height);
+
+  state.reset = () => {
+    ctx.drawImage(lineart, 0, 0);
+    binarize(ctx, canvas.width, canvas.height);
+  };
+
+  canvas.addEventListener('click', (ev) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor(((ev.clientX - rect.left) / rect.width) * canvas.width);
+    const y = Math.floor(((ev.clientY - rect.top) / rect.height) * canvas.height);
+    const filled = floodFill(ctx, canvas.width, canvas.height, x, y, hexToRgb(state.selected));
+    if (filled > 200) {
+      state.fillCount++;
+      sparkleAt(stage, ev.clientX - stage.getBoundingClientRect().left, ev.clientY - stage.getBoundingClientRect().top);
+      playDing();
+      if (state.fillCount >= MIN_FILLS_TO_FINISH) {
+        doneBtn.style.display = '';
+      }
+    }
+  });
+
+  stage.appendChild(canvas);
+}
+
+function binarize(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
+    if (avg < 128) {
+      // line → pure black
+      d[i] = d[i + 1] = d[i + 2] = 0;
+    } else {
+      // fill region → pure white
+      d[i] = d[i + 1] = d[i + 2] = 255;
+    }
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function floodFill(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  sx: number,
+  sy: number,
+  [fr, fg, fb]: [number, number, number],
+): number {
+  if (sx < 0 || sx >= w || sy < 0 || sy >= h) return 0;
+
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+
+  const idx = (x: number, y: number) => (y * w + x) * 4;
+  const fillable = (x: number, y: number): boolean => {
+    const i = idx(x, y);
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    // Skip our own color
+    if (r === fr && g === fg && b === fb) return false;
+    // Only fill light pixels (white / pastel existing fill). Black lines block.
+    return (r + g + b) / 3 > 160;
+  };
+  const paint = (x: number, y: number) => {
+    const i = idx(x, y);
+    d[i] = fr; d[i + 1] = fg; d[i + 2] = fb; d[i + 3] = 255;
+  };
+
+  if (!fillable(sx, sy)) return 0;
+
+  let count = 0;
+  const stack: Array<[number, number]> = [[sx, sy]];
+  while (stack.length) {
+    const [x0, y] = stack.pop()!;
+    let lx = x0;
+    while (lx >= 0 && fillable(lx, y)) lx--;
+    lx++;
+    let above = false, below = false;
+    while (lx < w && fillable(lx, y)) {
+      paint(lx, y);
+      count++;
+      if (y > 0) {
+        if (!above && fillable(lx, y - 1)) { stack.push([lx, y - 1]); above = true; }
+        else if (above && !fillable(lx, y - 1)) above = false;
+      }
+      if (y < h - 1) {
+        if (!below && fillable(lx, y + 1)) { stack.push([lx, y + 1]); below = true; }
+        else if (below && !fillable(lx, y + 1)) below = false;
+      }
+      lx++;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return count;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ];
+}
+
+/* ---------------- SVG fallback (when Grok hasn't been run) ---------------- */
+
+const REGIONS: { id: string; path: string }[] = [
+  { id: 'tower-l',  path: 'M120,240 L120,460 L220,460 L220,240 L170,200 Z' },
+  { id: 'tower-r',  path: 'M580,240 L580,460 L680,460 L680,240 L630,200 Z' },
+  { id: 'body',     path: 'M220,280 L220,460 L580,460 L580,280 L400,200 Z' },
+  { id: 'gate',     path: 'M360,380 Q360,340 400,340 Q440,340 440,380 L440,460 L360,460 Z' },
+  { id: 'spire-l',  path: 'M120,240 L170,140 L220,240 Z' },
+  { id: 'spire-m',  path: 'M220,280 L400,120 L580,280 Z' },
+  { id: 'spire-r',  path: 'M580,240 L630,140 L680,240 Z' },
+  { id: 'window',   path: 'M370,280 Q370,250 400,250 Q430,250 430,280 L430,320 L370,320 Z' },
+];
+
+function setupSvg(
+  stage: HTMLElement,
+  state: { selected: string; fillCount: number; reset: () => void },
+  doneBtn: HTMLButtonElement,
+): void {
+  stage.innerHTML = '';
   const svgNS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNS, 'svg');
   svg.setAttribute('viewBox', '0 0 800 500');
   svg.setAttribute('class', 'castle-svg');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-  // Ground
   const ground = document.createElementNS(svgNS, 'rect');
   ground.setAttribute('x', '0');
   ground.setAttribute('y', '460');
@@ -50,90 +241,45 @@ export function renderColoring(onDone: () => void): HTMLElement {
   ground.setAttribute('opacity', '0.5');
   svg.appendChild(ground);
 
-  const filled: Record<string, string> = {};
-  const regionEls: SVGPathElement[] = [];
+  const els: SVGPathElement[] = [];
+  const filled = new Set<string>();
 
   for (const r of REGIONS) {
-    const path = document.createElementNS(svgNS, 'path');
-    path.setAttribute('d', r.path);
-    path.setAttribute('fill', '#f8fafc');
-    path.setAttribute('stroke', '#1e1b4b');
-    path.setAttribute('stroke-width', '4');
-    path.setAttribute('stroke-linejoin', 'round');
-    path.setAttribute('class', 'region');
-    path.dataset.regionId = r.id;
-    path.addEventListener('click', () => applyColor(r.id, path));
-    svg.appendChild(path);
-    regionEls.push(path);
+    const p = document.createElementNS(svgNS, 'path');
+    p.setAttribute('d', r.path);
+    p.setAttribute('fill', '#f8fafc');
+    p.setAttribute('stroke', '#1e1b4b');
+    p.setAttribute('stroke-width', '4');
+    p.setAttribute('stroke-linejoin', 'round');
+    p.setAttribute('class', 'region');
+    p.addEventListener('click', (ev) => {
+      p.setAttribute('fill', state.selected);
+      filled.add(r.id);
+      sparkleAt(stage, (ev as MouseEvent).clientX - stage.getBoundingClientRect().left, (ev as MouseEvent).clientY - stage.getBoundingClientRect().top);
+      playDing();
+      if (filled.size >= 5) doneBtn.style.display = '';
+    });
+    svg.appendChild(p);
+    els.push(p);
   }
+
+  state.reset = () => {
+    filled.clear();
+    els.forEach((e) => e.setAttribute('fill', '#f8fafc'));
+  };
 
   stage.appendChild(svg);
-
-  // Palette
-  const palette = document.createElement('div');
-  palette.className = 'palette';
-
-  let selected: string = COLORS[0];
-  const wand = document.createElement('div');
-  wand.className = 'wand';
-  wand.innerHTML = '<span class="star">✨</span>';
-
-  for (const c of COLORS) {
-    const sw = document.createElement('button');
-    sw.className = 'swatch';
-    sw.style.background = c;
-    sw.dataset.color = c;
-    if (c === selected) sw.classList.add('active');
-    sw.addEventListener('click', () => {
-      selected = c;
-      palette.querySelectorAll('.swatch').forEach((s) => s.classList.remove('active'));
-      sw.classList.add('active');
-      wand.style.color = c;
-    });
-    palette.appendChild(sw);
-  }
-
-  const doneBtn = document.createElement('button');
-  doneBtn.className = 'big-button done-btn';
-  doneBtn.textContent = '完成了！✨';
-  doneBtn.style.display = 'none';
-  doneBtn.addEventListener('click', onDone);
-
-  function applyColor(id: string, el: SVGPathElement): void {
-    el.setAttribute('fill', selected);
-    filled[id] = selected;
-    sparkleAt(stage, el);
-    playDing();
-    // Require at least 5 regions colored before unlocking done
-    if (Object.keys(filled).length >= 5) {
-      doneBtn.style.display = '';
-    }
-  }
-
-  scene.append(bg, hint, stage, palette, wand, doneBtn);
-
-  scene.addEventListener('scene:enter', () => {
-    for (const k of Object.keys(filled)) delete filled[k];
-    regionEls.forEach((el) => el.setAttribute('fill', '#f8fafc'));
-    doneBtn.style.display = 'none';
-  });
-
-  return scene;
 }
 
-function sparkleAt(stage: HTMLElement, el: SVGPathElement): void {
-  const bbox = el.getBBox();
-  const stageRect = stage.getBoundingClientRect();
-  const svgRect = (el.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
-  const cx = svgRect.left - stageRect.left + ((bbox.x + bbox.width / 2) / 800) * svgRect.width;
-  const cy = svgRect.top - stageRect.top + ((bbox.y + bbox.height / 2) / 500) * svgRect.height;
+/* ---------------- shared effects ---------------- */
 
+function sparkleAt(stage: HTMLElement, x: number, y: number): void {
   for (let i = 0; i < 10; i++) {
     const s = document.createElement('div');
     s.className = 'sparkle';
     s.textContent = '✨';
-    s.style.left = cx + 'px';
-    s.style.top = cy + 'px';
+    s.style.left = x + 'px';
+    s.style.top = y + 'px';
     const angle = (Math.PI * 2 * i) / 10;
     const dist = 30 + Math.random() * 40;
     s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
