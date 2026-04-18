@@ -12,26 +12,16 @@
  */
 
 import { speak, speakRandom } from '../audio';
+import { PAGES, markDone } from '../progress';
+import { getSelectedPage } from '../state';
 
 const COLORS = ['#7dd3fc', '#c4b5fd', '#fbcfe8', '#ffffff', '#fde68a', '#86efac', '#fca5a5', '#a5f3fc'];
 
-const PAGES = [
-  './assets/coloring-castle.png',
-  './assets/coloring-princess.png',
-  './assets/coloring-sprite.png',
-  './assets/coloring-snowflake.png',
-  './assets/coloring-wand.png',
-  './assets/coloring-crown.png',
-  './assets/coloring-throne.png',
-  './assets/coloring-sleigh.png',
-  './assets/coloring-forest.png',
-  './assets/coloring-heart.png',
-];
-
 // A region is "colored enough" when less than this fraction of the initial white area remains.
-const DONE_THRESHOLD = 0.02;
+// 5% tolerance covers anti-aliased edge pixels and small unfillable slivers from line crossings.
+const DONE_THRESHOLD = 0.05;
 
-export function renderColoring(onDone: () => void): HTMLElement {
+export function renderColoring(onDone: () => void, onBack: () => void): HTMLElement {
   const scene = document.createElement('div');
   scene.className = 'scene scene-coloring';
 
@@ -47,13 +37,15 @@ export function renderColoring(onDone: () => void): HTMLElement {
   const stage = document.createElement('div');
   stage.className = 'color-stage';
 
-  // Next-page button (top right of stage)
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'next-page-btn';
-  nextBtn.textContent = '換一張 ➡️';
-  nextBtn.addEventListener('click', () => {
-    pickAndLoad();
+  // Back to gallery button (top right of stage)
+  const backBtn = document.createElement('button');
+  backBtn.className = 'next-page-btn';
+  backBtn.textContent = '⬅️ 返回總覽';
+  backBtn.addEventListener('click', () => {
+    onBack();
   });
+
+  let currentPageId: string | null = null;
 
   const palette = document.createElement('div');
   palette.className = 'palette';
@@ -66,7 +58,6 @@ export function renderColoring(onDone: () => void): HTMLElement {
   doneBtn.className = 'big-button done-btn';
   doneBtn.textContent = '完成了！✨';
   doneBtn.style.display = 'none';
-  doneBtn.addEventListener('click', onDone);
 
   const state = {
     selected: COLORS[0],
@@ -89,21 +80,28 @@ export function renderColoring(onDone: () => void): HTMLElement {
     palette.appendChild(sw);
   }
 
-  function pickAndLoad(): void {
+  function loadPage(pageId: string): void {
+    currentPageId = pageId;
     doneBtn.style.display = 'none';
-    const src = PAGES[Math.floor(Math.random() * PAGES.length)];
+    const meta = PAGES.find((p) => p.id === pageId);
+    const src = meta ? meta.src : PAGES[0].src;
     const img = new Image();
-    img.onload = () => setupCanvas(stage, img, state, doneBtn, nextBtn);
+    img.onload = () => setupCanvas(stage, img, state, doneBtn, backBtn);
     img.onerror = () => setupSvg(stage, state, doneBtn);
     img.src = src;
   }
 
-  scene.append(bg, hint, stage, nextBtn, palette, wand, doneBtn);
-  pickAndLoad();
+  scene.append(bg, hint, stage, backBtn, palette, wand, doneBtn);
 
   scene.addEventListener('scene:enter', () => {
     speak('把整張圖都塗滿顏色，就算完成囉！');
-    pickAndLoad();
+    const pageId = getSelectedPage() ?? PAGES[0].id;
+    loadPage(pageId);
+  });
+
+  doneBtn.addEventListener('click', () => {
+    if (currentPageId) markDone(currentPageId);
+    onDone();
   });
 
   return scene;

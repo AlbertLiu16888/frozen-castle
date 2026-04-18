@@ -10,6 +10,12 @@
   --pink-300: #fbcfe8;
   --white: #ffffff;
   --night: #1e1b4b;
+
+  /* Safe area insets (iOS notch / Android nav) — fall back to 0 on desktop */
+  --sa-top: env(safe-area-inset-top, 0px);
+  --sa-right: env(safe-area-inset-right, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left: env(safe-area-inset-left, 0px);
 }
 
 * {
@@ -24,8 +30,16 @@
 
 html, body, #app {
   width: 100%;
-  height: 100%;
+  /* iOS / Android mobile browser quirks:
+     - 100vh includes the URL bar area (breaks as bar expands/collapses)
+     - 100svh = small viewport (when bar is visible), stable
+     - 100dvh = dynamic (follows bar changes)
+     Cascade: vh first for old browsers, then svh, then dvh. */
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
   overflow: hidden;
+  overscroll-behavior: none;
   font-family: "Comic Sans MS", "Chalkboard SE", "PingFang TC", sans-serif;
 }
 
@@ -114,38 +128,146 @@ body {
   text-align: center;
 }
 
-/* Orientation nag for portrait phones */
-.rotate-nag {
-  position: fixed;
-  inset: 0;
-  background: var(--night);
+/* (Rotate nag removed — game now adapts to portrait and landscape.) */
+
+/* --- Scene: Gallery --- */
+.scene-gallery .scene-bg { filter: brightness(0.9); }
+
+.gallery-title {
+  position: absolute;
+  top: calc(0.5rem + var(--sa-top));
+  left: 0;
+  right: 0;
+  text-align: center;
   color: white;
-  display: none;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.gallery-title h2 {
+  font-size: 2.2rem;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  margin-bottom: 0.2rem;
+}
+
+.gallery-title .progress-line {
+  font-size: 1.2rem;
+  color: var(--ice-100);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.gallery-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.9rem;
+  width: min(94vw, 1180px);
+  padding: 0 0.5rem;
+  margin-top: 7rem;
+}
+
+.gallery-tile {
+  aspect-ratio: 4 / 3;
+  border: 4px solid white;
+  border-radius: 18px;
+  background: white;
+  padding: 0;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  display: flex;
   flex-direction: column;
+}
+
+.gallery-tile:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
+.gallery-tile:active { transform: scale(0.96); }
+
+.gallery-tile img {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0.3rem;
+}
+
+.gallery-tile .tile-label {
+  background: linear-gradient(135deg, var(--ice-300), var(--purple-300));
+  color: var(--night);
+  font-size: 1rem;
+  font-weight: 900;
+  padding: 0.3rem 0.5rem;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.gallery-tile.locked {
+  filter: grayscale(1) brightness(0.55);
+  cursor: not-allowed;
+}
+
+.gallery-tile.locked::after {
+  content: '🔒';
+  position: absolute;
+  inset: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
-  font-size: 1.5rem;
-  text-align: center;
-  padding: 2rem;
-  gap: 1rem;
+  font-size: 3.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  filter: none;
 }
 
-.rotate-nag .icon {
-  font-size: 5rem;
-  animation: rotate-hint 2s ease-in-out infinite;
+.gallery-tile.done::before {
+  content: '✓';
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #22c55e;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.1rem;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  border: 2px solid white;
 }
 
-@keyframes rotate-hint {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(90deg); }
+.gallery-finish {
+  position: absolute;
+  bottom: calc(1rem + var(--sa-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
 }
 
-@media (orientation: portrait) and (max-width: 900px) {
-  .rotate-nag { display: flex; }
+.gallery-reset {
+  position: absolute;
+  bottom: calc(1rem + var(--sa-bottom));
+  right: calc(1rem + var(--sa-right));
+  z-index: 3;
+  padding: 0.5rem 1rem;
+  border: 2px solid white;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0.85;
 }
 
-/* --- Scene: Assembly --- */
+.gallery-reset:active { transform: scale(0.95); }
+
+/* --- Scene: Assembly (kept for reference, unused) --- */
 .stage {
   position: relative;
   width: min(92vw, 1200px);
@@ -234,7 +356,7 @@ body {
 
 .done-btn {
   position: absolute;
-  bottom: 3rem;
+  bottom: calc(2rem + var(--sa-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 5;
@@ -265,7 +387,9 @@ body {
 .color-stage {
   position: relative;
   width: min(92vw, 900px);
-  height: min(65vh, 560px);
+  /* reserve ~11rem for hint at top + palette at bottom + safe area */
+  height: calc(100svh - 11rem - var(--sa-top) - var(--sa-bottom));
+  max-height: 560px;
   margin: auto;
   z-index: 1;
   display: flex;
@@ -304,19 +428,20 @@ body {
 
 .next-page-btn {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: calc(0.8rem + var(--sa-top));
+  left: calc(0.8rem + var(--sa-left));
   z-index: 4;
   padding: 0.5rem 1rem;
   border: 2px solid white;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(30, 27, 75, 0.6);
   backdrop-filter: blur(8px);
   color: white;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .next-page-btn:active {
@@ -325,16 +450,19 @@ body {
 
 .palette {
   position: absolute;
-  bottom: 2rem;
+  bottom: calc(1.2rem + var(--sa-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
+  gap: 0.8rem;
+  padding: 0.8rem 1.2rem;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 9999px;
   backdrop-filter: blur(10px);
   z-index: 3;
+  max-width: calc(100vw - 2rem - var(--sa-left) - var(--sa-right));
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .swatch {
@@ -425,17 +553,134 @@ body {
   margin-top: -5vh;
 }
 
+/* =========================================================================
+   Portrait / narrow-viewport overrides
+   Fires on phones held upright or any window taller than wide.
+   ========================================================================= */
+
+@media (orientation: portrait), (max-width: 640px) {
+  .title { font-size: 2.4rem; }
+  .subtitle { font-size: 1.05rem; padding: 0 1rem; }
+
+  .big-button {
+    min-width: 220px;
+    min-height: 90px;
+    font-size: 1.8rem;
+    padding: 1rem 2rem;
+  }
+
+  /* Gallery: 2 columns, more rows */
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
+    margin-top: 5.5rem;
+    margin-bottom: 6rem;
+    max-height: calc(100svh - 12rem - var(--sa-top) - var(--sa-bottom));
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 0.5rem;
+  }
+
+  .gallery-title h2 { font-size: 1.6rem; }
+  .gallery-title .progress-line { font-size: 1rem; }
+
+  .gallery-tile { aspect-ratio: 4 / 3; border-width: 3px; }
+  .gallery-tile .tile-label { font-size: 0.85rem; padding: 0.2rem; }
+
+  .gallery-finish {
+    min-width: 200px;
+    min-height: 80px;
+    font-size: 1.5rem;
+  }
+
+  .gallery-reset {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  /* Coloring scene compact */
+  .color-stage {
+    width: 94vw;
+    height: calc(100svh - 10rem - var(--sa-top) - var(--sa-bottom));
+    margin-top: 3.5rem;
+  }
+
+  .scene-hint { font-size: 1.2rem; top: calc(0.7rem + var(--sa-top)); }
+
+  .palette {
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+  }
+
+  .swatch {
+    width: 44px;
+    height: 44px;
+    border-width: 3px;
+  }
+
+  .next-page-btn {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .wand { font-size: 2rem; top: calc(0.8rem + var(--sa-top)); right: calc(0.8rem + var(--sa-right)); }
+
+  .mute-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+  }
+
+  /* Ending: smaller princess, text above */
+  .princess,
+  .princess-fallback {
+    max-height: 40vh;
+    bottom: calc(1rem + var(--sa-bottom));
+  }
+
+  .scene-ending .scene-content {
+    margin-top: -25vh;
+  }
+}
+
+/* Very small phones — tighter still (phones in landscape) */
+@media (max-height: 500px) {
+  .title { font-size: 1.8rem; }
+  .big-button {
+    min-width: 180px;
+    min-height: 70px;
+    font-size: 1.4rem;
+    padding: 0.8rem 1.5rem;
+  }
+  .gallery-grid { margin-top: 4.5rem; }
+
+  .color-stage {
+    height: calc(100svh - 8.5rem - var(--sa-top) - var(--sa-bottom));
+  }
+
+  .palette {
+    bottom: calc(0.5rem + var(--sa-bottom));
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .swatch { width: 38px; height: 38px; border-width: 3px; }
+  .scene-hint { font-size: 1.1rem; top: calc(0.5rem + var(--sa-top)); }
+  .next-page-btn { top: calc(0.5rem + var(--sa-top)); font-size: 0.85rem; padding: 0.3rem 0.7rem; }
+  .mute-btn { width: 40px; height: 40px; font-size: 1.2rem; top: calc(0.5rem + var(--sa-top)); right: calc(0.5rem + var(--sa-right)); }
+}
+
 /* Mute toggle */
 .mute-btn {
   position: fixed;
-  top: 1rem;
-  right: 1rem;
+  top: calc(0.8rem + var(--sa-top));
+  right: calc(0.8rem + var(--sa-right));
   z-index: 10000;
   width: 56px;
   height: 56px;
   border-radius: 50%;
   border: 3px solid white;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(30, 27, 75, 0.55);
   backdrop-filter: blur(10px);
   color: white;
   font-size: 1.8rem;

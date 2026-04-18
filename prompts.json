@@ -80,36 +80,6 @@
       "prompt": "A children's coloring book page of a big heart centered on the page decorated with flowers and swirls. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. The heart has a decorative border, a smaller heart shape inside creating a ring, 4-5 simple flower shapes (each with clear petals, center circle, and a leaf) scattered around the outer border, and 3-4 small sparkles between them. Thick lines, symmetrical, rounded friendly shapes, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
     },
     {
-      "id": "piece-body",
-      "filename": "piece-body.png",
-      "used_in": "scene 1 castle piece (main building wall - just ONE wall section)",
-      "prompt": "ONE single castle wall block — a simple stand-alone rectangular wall section like a Lego brick, NOT a full castle, NOT multiple towers, just ONE plain rectangular piece. The piece is a chibi-style wide rectangle of translucent pale-blue ice with white snow on top edge, one small arched window in the center, flat crenellations on top, soft rounded corners. CRITICAL: do not draw any towers, do not draw spires, do not draw a whole castle — only this single flat wall block. Isolated on pure flat solid white (#FFFFFF) background with clear wide white margin on all sides, front elevation view, no shadow, no ground, no text, centered"
-    },
-    {
-      "id": "piece-gate",
-      "filename": "piece-gate.png",
-      "used_in": "scene 1 castle piece (gate)",
-      "prompt": "A single cute cartoon ice castle gate arch, tall arched doorway made of shimmering pale blue ice with frost patterns, small white snow decorations on top, chibi storybook style, soft rounded shapes, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition"
-    },
-    {
-      "id": "piece-tower-l",
-      "filename": "piece-tower-l.png",
-      "used_in": "scene 1 castle piece (left tower)",
-      "prompt": "A single cute cartoon ice castle tower, tall narrow cylinder with small round window and pointed conical roof, made of translucent pale blue ice with white snow cap on the roof, lavender accents, chibi storybook style, soft rounded shapes, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition, sparkly"
-    },
-    {
-      "id": "piece-tower-r",
-      "filename": "piece-tower-r.png",
-      "used_in": "scene 1 castle piece (right tower - mirror)",
-      "prompt": "A single cute cartoon ice castle tower, tall narrow cylinder with small round window and pointed conical roof, made of translucent pale blue ice with white snow cap on the roof, pink accents, chibi storybook style, soft rounded shapes, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition, sparkly"
-    },
-    {
-      "id": "piece-spire",
-      "filename": "piece-spire.png",
-      "used_in": "scene 1 castle piece (a single pointed roof spire ornament)",
-      "prompt": "ONE single tall pointed triangular roof spire, like an isolated ice-cream cone shape — pale translucent blue ice triangle with small white snow rim at its base and a tiny glowing gold star at the very tip. NOT a castle, NOT a tower with walls, NOT multiple spires, just ONE triangular pointed roof piece floating on white. Chibi storybook style, soft rounded triangle, isolated on pure flat solid white (#FFFFFF) background with clear wide white margin on all sides, front view, no shadow, no walls, no building, no text, centered"
-    },
-    {
       "id": "princess",
       "filename": "princess.png",
       "used_in": "ending scene character",

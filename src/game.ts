@@ -1,9 +1,9 @@
 import { renderHome } from './scenes/home';
-import { renderAssembly } from './scenes/assembly';
+import { renderGallery } from './scenes/gallery';
 import { renderColoring } from './scenes/coloring';
 import { renderEnding } from './scenes/ending';
 
-export type SceneName = 'home' | 'assembly' | 'coloring' | 'ending';
+export type SceneName = 'home' | 'gallery' | 'coloring' | 'ending';
 
 export class Game {
   private root: HTMLElement;
@@ -15,9 +15,15 @@ export class Game {
   }
 
   start(): void {
-    this.scenes.home = renderHome(() => this.goto('assembly'));
-    this.scenes.assembly = renderAssembly(() => this.goto('coloring'));
-    this.scenes.coloring = renderColoring(() => this.goto('ending'));
+    this.scenes.home = renderHome(() => this.goto('gallery'));
+    this.scenes.gallery = renderGallery(
+      () => this.goto('coloring'),
+      () => this.goto('ending'),
+    );
+    this.scenes.coloring = renderColoring(
+      () => this.goto('gallery'),
+      () => this.goto('gallery'),
+    );
     this.scenes.ending = renderEnding(() => this.goto('home'));
 
     for (const key of Object.keys(this.scenes) as SceneName[]) {
@@ -30,7 +36,6 @@ export class Game {
     const prev = this.current;
     this.current = name;
     this.scenes[prev].classList.remove('active');
-    // Re-mount scene to reset state if it has a re-init hook
     const el = this.scenes[name];
     el.dispatchEvent(new CustomEvent('scene:enter'));
     this.show(name);
