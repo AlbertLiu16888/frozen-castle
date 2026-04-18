@@ -28,8 +28,8 @@
     {
       "id": "piece-body",
       "filename": "piece-body.png",
-      "used_in": "scene 1 castle piece (main building)",
-      "prompt": "A single cute cartoon ice castle main building block, rectangular base with a pointed roof, made of translucent pale blue ice crystal with white snow accents, chibi storybook style, soft rounded edges, sparkles, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, no ground, centered composition, bright soft pastel colors"
+      "used_in": "scene 1 castle piece (main building wall - just ONE wall section)",
+      "prompt": "ONE single castle wall block — a simple stand-alone rectangular wall section like a Lego brick, NOT a full castle, NOT multiple towers, just ONE plain rectangular piece. The piece is a chibi-style wide rectangle of translucent pale-blue ice with white snow on top edge, one small arched window in the center, flat crenellations on top, soft rounded corners. CRITICAL: do not draw any towers, do not draw spires, do not draw a whole castle — only this single flat wall block. Isolated on pure flat solid white (#FFFFFF) background with clear wide white margin on all sides, front elevation view, no shadow, no ground, no text, centered"
     },
     {
       "id": "piece-gate",
@@ -52,8 +52,8 @@
     {
       "id": "piece-spire",
       "filename": "piece-spire.png",
-      "used_in": "scene 1 castle piece (central spire/crown)",
-      "prompt": "A single cute cartoon ice castle central spire, tall pointed triangular roof topped with a glowing star ornament, made of pale blue translucent ice with snow trim, lavender glow, chibi storybook style, soft rounded edges, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition, sparkly"
+      "used_in": "scene 1 castle piece (a single pointed roof spire ornament)",
+      "prompt": "ONE single tall pointed triangular roof spire, like an isolated ice-cream cone shape — pale translucent blue ice triangle with small white snow rim at its base and a tiny glowing gold star at the very tip. NOT a castle, NOT a tower with walls, NOT multiple spires, just ONE triangular pointed roof piece floating on white. Chibi storybook style, soft rounded triangle, isolated on pure flat solid white (#FFFFFF) background with clear wide white margin on all sides, front view, no shadow, no walls, no building, no text, centered"
     },
     {
       "id": "princess",

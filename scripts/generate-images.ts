@@ -28,7 +28,7 @@ interface PromptsFile {
 }
 
 const XAI_URL = 'https://api.x.ai/v1/images/generations';
-const MODEL = 'grok-2-image-1212';
+const MODEL = 'grok-imagine-image';
 const OUT_DIR = path.resolve('public/assets');
 
 // Assets that should have their white background removed (pieces + characters)
