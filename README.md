@@ -1,5 +1,7 @@
 # 冰雪魔法城堡 (Frozen Magic Castle)
 
+**🎮 線上玩：https://albertliu16888.github.io/frozen-castle/**
+
 為 3–5 歲小朋友設計的網頁遊戲。原創冰雪公主風格，不使用任何 Disney / Frozen 相關商標。
 
 ## 玩法
@@ -30,7 +32,13 @@ npm run generate-images
 
 ## 部署
 
-推到 GitHub 的 `main` branch 會自動觸發 `.github/workflows/deploy.yml` 部署到 GitHub Pages。
+更新遊戲內容後跑：
+
+```bash
+npm run deploy
+```
+
+會 build + push 到 `gh-pages` branch，幾分鐘後 Pages 自動更新。
 
 ## 技術棧
 - Vite + TypeScript（純前端，無框架）
