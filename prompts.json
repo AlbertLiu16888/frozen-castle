@@ -1,0 +1,65 @@
+{
+  "_meta": {
+    "game": "冰雪魔法城堡 (Frozen Magic Castle)",
+    "audience": "ages 3-5",
+    "style_guide": "Soft pastel children's book illustration. Cute, rounded shapes, big smiles, no scary faces. Consistent ice/frost theme: icy blue (#7dd3fc), lavender purple (#c4b5fd), pastel pink (#fbcfe8), snow white, with soft yellow sparkle accents. NO text, NO logos, NO watermarks. Must be original — do NOT reference Disney, Frozen, Elsa, or any trademarked character.",
+    "model": "grok-2-image-1212",
+    "aspect_ratio_note": "Grok 2 Image produces 1024x768 by default. That's fine for backgrounds. For standalone pieces the game crops transparent PNG at build or uses them as-is."
+  },
+  "prompts": [
+    {
+      "id": "bg-home",
+      "filename": "bg-home.png",
+      "used_in": "home scene + ending scene background",
+      "prompt": "A dreamy fairytale night sky over a distant snow-capped mountain range, soft gradient from deep indigo at top to lavender purple at bottom, tiny twinkling stars, gentle drifting snowflakes, wispy pastel clouds, aurora borealis glow in icy blue and pink, children's picture book illustration style, no text, no logos, magical and peaceful, cinematic wide shot"
+    },
+    {
+      "id": "bg-ground",
+      "filename": "bg-ground.png",
+      "used_in": "assembly scene background (blank canvas where castle gets built)",
+      "prompt": "An empty snowy hilltop foreground with soft sparkling snow, gentle lavender-to-pink sky behind, distant pastel snow mountains on the horizon, scattered tiny ice crystals glinting, no castle, no buildings, no characters, just a clean snowy stage ready for a castle to be placed on, children's picture book illustration, soft pastel colors (icy blue, lavender, pink), no text"
+    },
+    {
+      "id": "piece-body",
+      "filename": "piece-body.png",
+      "used_in": "scene 1 castle piece (main building)",
+      "prompt": "A single cute cartoon ice castle main building block, rectangular base with a pointed roof, made of translucent pale blue ice crystal with white snow accents, chibi storybook style, soft rounded edges, sparkles, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, no ground, centered composition, bright soft pastel colors"
+    },
+    {
+      "id": "piece-gate",
+      "filename": "piece-gate.png",
+      "used_in": "scene 1 castle piece (gate)",
+      "prompt": "A single cute cartoon ice castle gate arch, tall arched doorway made of shimmering pale blue ice with frost patterns, small white snow decorations on top, chibi storybook style, soft rounded shapes, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition"
+    },
+    {
+      "id": "piece-tower-l",
+      "filename": "piece-tower-l.png",
+      "used_in": "scene 1 castle piece (left tower)",
+      "prompt": "A single cute cartoon ice castle tower, tall narrow cylinder with small round window and pointed conical roof, made of translucent pale blue ice with white snow cap on the roof, lavender accents, chibi storybook style, soft rounded shapes, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition, sparkly"
+    },
+    {
+      "id": "piece-tower-r",
+      "filename": "piece-tower-r.png",
+      "used_in": "scene 1 castle piece (right tower - mirror)",
+      "prompt": "A single cute cartoon ice castle tower, tall narrow cylinder with small round window and pointed conical roof, made of translucent pale blue ice with white snow cap on the roof, pink accents, chibi storybook style, soft rounded shapes, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition, sparkly"
+    },
+    {
+      "id": "piece-spire",
+      "filename": "piece-spire.png",
+      "used_in": "scene 1 castle piece (central spire/crown)",
+      "prompt": "A single cute cartoon ice castle central spire, tall pointed triangular roof topped with a glowing star ornament, made of pale blue translucent ice with snow trim, lavender glow, chibi storybook style, soft rounded edges, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition, sparkly"
+    },
+    {
+      "id": "princess",
+      "filename": "princess.png",
+      "used_in": "ending scene character",
+      "prompt": "A cute chibi-style ice princess for a children's game, age appropriate for toddlers, long pale silver-blonde braid, friendly smile, big sparkling eyes, pastel icy-blue flowing dress with snowflake patterns and a short lavender cape, small silver tiara with a snowflake motif, standing pose with one hand gently raised, soft pastel color palette (icy blue, lavender, pink, white), children's picture book illustration, warm and welcoming expression, NOT Disney Elsa, completely original design, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, full body, no text, no logo"
+    },
+    {
+      "id": "snow-sprite",
+      "filename": "snow-sprite.png",
+      "used_in": "optional mascot / guide character (future scenes)",
+      "prompt": "An adorable tiny snow sprite mascot for a toddler game, a small friendly snowflake-shaped character with a cute round face, big smiling eyes, tiny rosy cheeks, soft glowing pale-blue and white body with sparkle accents, chibi storybook style, isolated on pure flat solid white (#FFFFFF) background, subject fills most of the frame with clear white margin, front view, no shadow, no text, centered composition, inviting and friendly expression"
+    }
+  ]
+}
