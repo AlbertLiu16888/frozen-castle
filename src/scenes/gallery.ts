@@ -7,6 +7,7 @@
 import { PAGES, isUnlocked, isDone, completedCount, allComplete, resetProgress } from '../progress';
 import { setSelectedPage } from '../state';
 import { speak } from '../audio';
+import { getArtwork, clearArtworks } from '../artwork';
 
 export function renderGallery(onPick: () => void, onAllDone: () => void): HTMLElement {
   const scene = document.createElement('div');
@@ -36,8 +37,9 @@ export function renderGallery(onPick: () => void, onAllDone: () => void): HTMLEl
   resetBtn.className = 'gallery-reset';
   resetBtn.textContent = '重新開始 🔄';
   resetBtn.addEventListener('click', () => {
-    if (confirm('確定要重新開始嗎？所有進度會消失喔。')) {
+    if (confirm('確定要重新開始嗎？所有進度和畫作會消失喔。')) {
       resetProgress();
+      clearArtworks();
       refresh();
     }
   });
@@ -56,7 +58,9 @@ export function renderGallery(onPick: () => void, onAllDone: () => void): HTMLEl
       if (done) tile.classList.add('done');
 
       const img = document.createElement('img');
-      img.src = page.src;
+      // Completed pages show the child's own colored version when available
+      const saved = done ? getArtwork(page.id) : null;
+      img.src = saved ?? page.src;
       img.alt = page.title;
       img.draggable = false;
 

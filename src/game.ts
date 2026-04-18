@@ -1,9 +1,10 @@
 import { renderHome } from './scenes/home';
 import { renderGallery } from './scenes/gallery';
 import { renderColoring } from './scenes/coloring';
+import { renderPhoto } from './scenes/photo';
 import { renderEnding } from './scenes/ending';
 
-export type SceneName = 'home' | 'gallery' | 'coloring' | 'ending';
+export type SceneName = 'home' | 'gallery' | 'coloring' | 'photo' | 'ending';
 
 export class Game {
   private root: HTMLElement;
@@ -23,7 +24,9 @@ export class Game {
     this.scenes.coloring = renderColoring(
       () => this.goto('gallery'),
       () => this.goto('gallery'),
+      () => this.goto('photo'),
     );
+    this.scenes.photo = renderPhoto(() => this.goto('gallery'));
     this.scenes.ending = renderEnding(() => this.goto('home'));
 
     for (const key of Object.keys(this.scenes) as SceneName[]) {
@@ -34,7 +37,9 @@ export class Game {
 
   private goto(name: SceneName): void {
     const prev = this.current;
+    if (prev === name) return;
     this.current = name;
+    this.scenes[prev].dispatchEvent(new CustomEvent('scene:leave'));
     this.scenes[prev].classList.remove('active');
     const el = this.scenes[name];
     el.dispatchEvent(new CustomEvent('scene:enter'));

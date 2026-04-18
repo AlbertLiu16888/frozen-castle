@@ -14,6 +14,7 @@
 import { speak, speakRandom } from '../audio';
 import { PAGES, markDone } from '../progress';
 import { getSelectedPage } from '../state';
+import { saveArtwork, exportCanvasToDataUrl, saveOrShare } from '../artwork';
 
 const COLORS = ['#7dd3fc', '#c4b5fd', '#fbcfe8', '#ffffff', '#fde68a', '#86efac', '#fca5a5', '#a5f3fc'];
 
@@ -21,7 +22,11 @@ const COLORS = ['#7dd3fc', '#c4b5fd', '#fbcfe8', '#ffffff', '#fde68a', '#86efac'
 // 5% tolerance covers anti-aliased edge pixels and small unfillable slivers from line crossings.
 const DONE_THRESHOLD = 0.05;
 
-export function renderColoring(onDone: () => void, onBack: () => void): HTMLElement {
+export function renderColoring(
+  onDone: () => void,
+  onBack: () => void,
+  onPhoto: () => void,
+): HTMLElement {
   const scene = document.createElement('div');
   scene.className = 'scene scene-coloring';
 
@@ -59,6 +64,28 @@ export function renderColoring(onDone: () => void, onBack: () => void): HTMLElem
   doneBtn.textContent = '完成了！✨';
   doneBtn.style.display = 'none';
 
+  // "Done" modal panel with save / photo / continue options
+  const donePanel = document.createElement('div');
+  donePanel.className = 'done-panel';
+  donePanel.style.display = 'none';
+  donePanel.innerHTML = `
+    <div class="done-card">
+      <h2>太棒了！🎉</h2>
+      <img class="done-preview" alt="我的畫作" />
+      <div class="done-actions">
+        <button class="done-action save-btn">💾 儲存</button>
+        <button class="done-action photo-btn">📷 拍照</button>
+        <button class="done-action continue-btn">➡️ 下一張</button>
+      </div>
+    </div>
+  `;
+  const donePreview = donePanel.querySelector<HTMLImageElement>('.done-preview')!;
+  const saveBtn = donePanel.querySelector<HTMLButtonElement>('.save-btn')!;
+  const photoBtn = donePanel.querySelector<HTMLButtonElement>('.photo-btn')!;
+  const continueBtn = donePanel.querySelector<HTMLButtonElement>('.continue-btn')!;
+
+  let lastArtworkDataUrl = '';
+
   const state = {
     selected: COLORS[0],
     initialWhite: 0,
@@ -91,16 +118,47 @@ export function renderColoring(onDone: () => void, onBack: () => void): HTMLElem
     img.src = src;
   }
 
-  scene.append(bg, hint, stage, backBtn, palette, wand, doneBtn);
+  scene.append(bg, hint, stage, backBtn, palette, wand, doneBtn, donePanel);
 
   scene.addEventListener('scene:enter', () => {
     speak('把整張圖都塗滿顏色，就算完成囉！');
+    donePanel.style.display = 'none';
     const pageId = getSelectedPage() ?? PAGES[0].id;
     loadPage(pageId);
   });
 
+  const captureArtwork = (): string => {
+    const canvas = stage.querySelector<HTMLCanvasElement>('.castle-canvas');
+    if (!canvas) return '';
+    return exportCanvasToDataUrl(canvas);
+  };
+
   doneBtn.addEventListener('click', () => {
-    if (currentPageId) markDone(currentPageId);
+    if (!currentPageId) return;
+    const dataUrl = captureArtwork();
+    if (dataUrl) {
+      lastArtworkDataUrl = dataUrl;
+      saveArtwork(currentPageId, dataUrl);
+      donePreview.src = dataUrl;
+    }
+    markDone(currentPageId);
+    doneBtn.style.display = 'none';
+    donePanel.style.display = '';
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    if (!lastArtworkDataUrl || !currentPageId) return;
+    const stamp = new Date().toISOString().slice(0, 10);
+    await saveOrShare(lastArtworkDataUrl, `冰雪繪本-${currentPageId}-${stamp}.jpg`);
+  });
+
+  photoBtn.addEventListener('click', () => {
+    donePanel.style.display = 'none';
+    onPhoto();
+  });
+
+  continueBtn.addEventListener('click', () => {
+    donePanel.style.display = 'none';
     onDone();
   });
 
