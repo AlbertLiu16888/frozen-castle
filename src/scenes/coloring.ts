@@ -190,57 +190,71 @@ function pencilSvg(): string {
 function makePencil(color: string, onFill: (color: string, x: number, y: number) => void): HTMLElement {
   const btn = document.createElement('button');
   btn.className = 'pencil';
+  btn.type = 'button';
+  btn.draggable = false;
   btn.style.setProperty('--c', color);
   btn.dataset.color = color;
   btn.innerHTML = pencilSvg();
 
+  // Block native HTML5 drag which otherwise steals pointer events on desktop
+  btn.addEventListener('dragstart', (e) => e.preventDefault());
+
   let ghost: HTMLElement | null = null;
-  let pointerId = -1;
+  let activeId: number | null = null;
+  // Keep references so we can remove precisely the same handlers on cleanup.
+  let onMove: ((e: PointerEvent) => void) | null = null;
+  let onEnd: ((e: PointerEvent) => void) | null = null;
 
-  const createGhost = (x: number, y: number) => {
-    ghost = document.createElement('div');
-    ghost.className = 'pencil-ghost';
-    ghost.style.setProperty('--c', color);
-    ghost.innerHTML = pencilSvg();
-    ghost.style.left = (x - TIP_X) + 'px';
-    ghost.style.top = (y - TIP_Y) + 'px';
-    document.body.appendChild(ghost);
-  };
-
-  const moveGhost = (x: number, y: number) => {
+  const updateGhost = (x: number, y: number) => {
     if (!ghost) return;
-    ghost.style.left = (x - TIP_X) + 'px';
-    ghost.style.top = (y - TIP_Y) + 'px';
+    ghost.style.transform = `translate(${x - TIP_X}px, ${y - TIP_Y}px) rotate(-8deg)`;
   };
 
   const cleanup = () => {
     if (ghost) { ghost.remove(); ghost = null; }
     btn.classList.remove('is-held');
-    pointerId = -1;
+    if (onMove) document.removeEventListener('pointermove', onMove);
+    if (onEnd) {
+      document.removeEventListener('pointerup', onEnd);
+      document.removeEventListener('pointercancel', onEnd);
+    }
+    onMove = null;
+    onEnd = null;
+    activeId = null;
   };
 
   btn.addEventListener('pointerdown', (e) => {
+    if (activeId !== null) return;
     e.preventDefault();
-    pointerId = e.pointerId;
-    btn.setPointerCapture(pointerId);
+    activeId = e.pointerId;
     btn.classList.add('is-held');
-    createGhost(e.clientX, e.clientY);
+
+    // Create ghost as a direct child of <body> so nothing can clip/hide it.
+    ghost = document.createElement('div');
+    ghost.className = 'pencil-ghost';
+    ghost.style.setProperty('--c', color);
+    ghost.innerHTML = pencilSvg();
+    document.body.appendChild(ghost);
+    updateGhost(e.clientX, e.clientY);
+
+    onMove = (ev) => {
+      if (ev.pointerId !== activeId) return;
+      updateGhost(ev.clientX, ev.clientY);
+    };
+
+    onEnd = (ev) => {
+      if (ev.pointerId !== activeId) return;
+      const x = ev.clientX;
+      const y = ev.clientY;
+      // Clean up first so if onFill throws we still reset state
+      cleanup();
+      if (ev.type !== 'pointercancel') onFill(color, x, y);
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onEnd);
+    document.addEventListener('pointercancel', onEnd);
   });
-
-  btn.addEventListener('pointermove', (e) => {
-    if (e.pointerId !== pointerId) return;
-    moveGhost(e.clientX, e.clientY);
-  });
-
-  const finish = (e: PointerEvent) => {
-    if (e.pointerId !== pointerId) return;
-    try { btn.releasePointerCapture(pointerId); } catch { /* ignore */ }
-    onFill(color, e.clientX, e.clientY);
-    cleanup();
-  };
-
-  btn.addEventListener('pointerup', finish);
-  btn.addEventListener('pointercancel', () => cleanup());
 
   return btn;
 }

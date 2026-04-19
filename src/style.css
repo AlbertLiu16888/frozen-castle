@@ -524,14 +524,16 @@ body {
 
 .pencil-ghost {
   position: fixed;
+  top: 0;
+  left: 0;
   width: 52px;
   height: 180px;
   pointer-events: none;
   z-index: 10001;
   opacity: 0.75;
   filter: drop-shadow(0 8px 14px rgba(0,0,0,0.5));
-  transform: rotate(-8deg);
-  transform-origin: 50% 97%;
+  transform-origin: 30px 195px;
+  will-change: transform;
 }
 
 .pencil-ghost .pencil-svg { width: 100%; height: 100%; }
