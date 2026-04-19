@@ -1,12 +1,13 @@
 /**
- * Gallery: shows all 10 coloring pages as thumbnails.
+ * Gallery: shows all coloring pages as thumbnails, grouped by chapter.
  * Pages unlock sequentially — finishing page N unlocks page N+1.
- * When every page is done, the "see the princess" button leads to the ending.
  */
 
-import { PAGES, isUnlocked, isDone, completedCount, allComplete, resetProgress } from '../progress';
+import {
+  PAGES, CHAPTERS, isUnlocked, isDone, completedCount, allComplete, resetProgress,
+} from '../progress';
 import { setSelectedPage } from '../state';
-import { speak } from '../audio';
+import { speak, speakNamed } from '../audio';
 import { getArtwork, clearArtworks } from '../artwork';
 
 export function renderGallery(onPick: () => void, onAllDone: () => void): HTMLElement {
@@ -25,8 +26,8 @@ export function renderGallery(onPick: () => void, onAllDone: () => void): HTMLEl
     <p class="progress-line"></p>
   `;
 
-  const grid = document.createElement('div');
-  grid.className = 'gallery-grid';
+  const scroller = document.createElement('div');
+  scroller.className = 'gallery-scroller';
 
   const finishBtn = document.createElement('button');
   finishBtn.className = 'big-button gallery-finish';
@@ -44,41 +45,60 @@ export function renderGallery(onPick: () => void, onAllDone: () => void): HTMLEl
     }
   });
 
-  scene.append(bg, title, grid, finishBtn, resetBtn);
+  scene.append(bg, title, scroller, finishBtn, resetBtn);
 
   const refresh = () => {
-    grid.innerHTML = '';
-    PAGES.forEach((page, idx) => {
-      const tile = document.createElement('button');
-      tile.className = 'gallery-tile';
-      tile.dataset.pageId = page.id;
-      const unlocked = isUnlocked(idx);
-      const done = isDone(page.id);
-      if (!unlocked) tile.classList.add('locked');
-      if (done) tile.classList.add('done');
+    scroller.innerHTML = '';
 
-      const img = document.createElement('img');
-      // Completed pages show the child's own colored version when available
-      const saved = done ? getArtwork(page.id) : null;
-      img.src = saved ?? page.src;
-      img.alt = page.title;
-      img.draggable = false;
+    for (const chapter of CHAPTERS) {
+      const chapterPages = PAGES.map((p, idx) => ({ p, idx })).filter((x) => x.p.chapter === chapter.id);
+      if (chapterPages.length === 0) continue;
 
-      const label = document.createElement('span');
-      label.className = 'tile-label';
-      label.textContent = page.title;
+      const section = document.createElement('section');
+      section.className = 'gallery-chapter';
 
-      tile.append(img, label);
-      tile.addEventListener('click', () => {
-        if (!unlocked) {
-          speak('這張還要先完成前一張喔！');
-          return;
-        }
-        setSelectedPage(page.id);
-        onPick();
-      });
-      grid.appendChild(tile);
-    });
+      const head = document.createElement('h3');
+      head.className = 'chapter-heading';
+      head.textContent = chapter.title;
+      section.appendChild(head);
+
+      const grid = document.createElement('div');
+      grid.className = 'gallery-grid';
+
+      for (const { p: page, idx } of chapterPages) {
+        const tile = document.createElement('button');
+        tile.className = 'gallery-tile';
+        tile.dataset.pageId = page.id;
+        const unlocked = isUnlocked(idx);
+        const done = isDone(page.id);
+        if (!unlocked) tile.classList.add('locked');
+        if (done) tile.classList.add('done');
+
+        const img = document.createElement('img');
+        const saved = done ? getArtwork(page.id) : null;
+        img.src = saved ?? page.src;
+        img.alt = page.title;
+        img.draggable = false;
+
+        const label = document.createElement('span');
+        label.className = 'tile-label';
+        label.textContent = page.title;
+
+        tile.append(img, label);
+        tile.addEventListener('click', () => {
+          if (!unlocked) {
+            speakNamed('{name}要先完成前一張喔！');
+            return;
+          }
+          setSelectedPage(page.id);
+          onPick();
+        });
+        grid.appendChild(tile);
+      }
+
+      section.appendChild(grid);
+      scroller.appendChild(section);
+    }
 
     const done = completedCount();
     const line = title.querySelector('.progress-line');
@@ -89,11 +109,11 @@ export function renderGallery(onPick: () => void, onAllDone: () => void): HTMLEl
   scene.addEventListener('scene:enter', () => {
     refresh();
     if (allComplete()) {
-      speak('哇！你把全部的畫都塗完了，太厲害了！');
+      speakNamed('哇！{name}把全部的畫都塗完了，超級厲害！');
     } else if (completedCount() === 0) {
-      speak('挑一張你喜歡的來畫畫吧！');
+      speakNamed('{name}挑一張你喜歡的來畫畫吧！');
     } else {
-      speak('做得好，接下來畫這一張！');
+      speak('做得真好，再來畫下一張！');
     }
   });
 

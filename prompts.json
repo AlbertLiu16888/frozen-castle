@@ -80,6 +80,66 @@
       "prompt": "A children's coloring book page of a big heart centered on the page decorated with flowers and swirls. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. The heart has a decorative border, a smaller heart shape inside creating a ring, 4-5 simple flower shapes (each with clear petals, center circle, and a leaf) scattered around the outer border, and 3-4 small sparkles between them. Thick lines, symmetrical, rounded friendly shapes, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
     },
     {
+      "id": "coloring-rainbow",
+      "filename": "coloring-rainbow.png",
+      "used_in": "chapter 2 coloring page — rainbow with clouds",
+      "prompt": "A children's coloring book page of a big happy rainbow arching over two puffy smiling clouds. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. Rainbow has 6-7 clearly separated arc bands, two rounded clouds at the base with friendly smiling faces, 3-4 small separate stars and hearts floating around. Thick toddler coloring book lines, ages 3-5 friendly, rounded. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-unicorn",
+      "filename": "coloring-unicorn.png",
+      "used_in": "chapter 2 coloring page — cute unicorn",
+      "prompt": "A children's coloring book page of a cute chibi unicorn standing in a meadow. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. The unicorn has a single spiral horn, flowing wavy mane with multiple clearly separated wavy sections, matching flowing tail, big round smiling eyes, long eyelashes, four legs with tiny hooves, a small heart on its cheek, and 3-4 small separate stars around it. Thick lines, rounded chibi proportions, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-butterfly",
+      "filename": "coloring-butterfly.png",
+      "used_in": "chapter 2 coloring page — butterfly garden",
+      "prompt": "A children's coloring book page of a happy butterfly garden. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. One big symmetrical butterfly in the center with 4 wings, each wing divided into 3-4 enclosed pattern shapes (circles, hearts, teardrops), a smiling face on its body, and 3-4 separate smaller butterflies around it, 3-4 simple tulip or daisy flowers with petals, stems, and leaves, and a sun with rays in the corner. Thick toddler coloring book lines, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-penguin",
+      "filename": "coloring-penguin.png",
+      "used_in": "chapter 2 coloring page — penguin family",
+      "prompt": "A children's coloring book page of three cute chibi penguins standing on an ice floe — a big mommy penguin, a daddy penguin with a bow tie, and a tiny baby penguin in the middle. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. Each penguin has a clearly separated belly oval, face, eyes, beak, feet, wings. Below them an ice floe shape, above a few small snowflakes. Thick lines, rounded chibi style, ages 3-5 friendly. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-rocket",
+      "filename": "coloring-rocket.png",
+      "used_in": "chapter 2 coloring page — rocket in space",
+      "prompt": "A children's coloring book page of a big friendly rocket ship flying through space. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. The rocket has a pointed nose cone, a round porthole window with a cute smiling face inside, a body, two side fins, and flames puffing out the bottom in 3-4 separated flame shapes. Around it: 4-5 separate stars, a crescent moon with a face, a smiling planet with a ring, and a small comet. Thick lines, chibi style, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-mermaid",
+      "filename": "coloring-mermaid.png",
+      "used_in": "chapter 2 coloring page — cute mermaid",
+      "prompt": "A children's coloring book page of a cute chibi mermaid girl sitting on a rock under the sea. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. She has long wavy hair divided into 3-4 separated wavy sections, a big smile, a seashell-style top, a long scaly tail with 6-8 clearly drawn scales, one hand waving. Around her: 2-3 small fish, one starfish, 3-4 separate bubbles, a piece of coral. Thick toddler coloring book lines, rounded chibi shape, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-cupcake",
+      "filename": "coloring-cupcake.png",
+      "used_in": "chapter 2 coloring page — birthday cupcake",
+      "prompt": "A children's coloring book page of a giant happy cupcake centered on the page. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. The cupcake has a fluted paper cup (with vertical dividing lines making 6-8 separable bands), a swirled frosting top divided into 3 swirl layers, a big cherry on top with a stem and leaf, and decorations — 4-5 small separated sprinkle shapes (stars, hearts, circles) on the frosting. Around the cupcake: 3-4 small sparkles and 2 little hearts. Thick lines, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-dragon",
+      "filename": "coloring-dragon.png",
+      "used_in": "chapter 2 coloring page — friendly baby dragon",
+      "prompt": "A children's coloring book page of a cute chibi baby dragon sitting and smiling. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. The dragon has a round head with big eyes, two small horns, a friendly smile with one tiny tooth, a rounded body with a lighter belly patch (separate region), four short legs, a tail ending in a heart or arrow shape, two small wings each divided into 3 feather sections, and a little puff of fire or a heart coming out of its mouth. Around it: 3-4 separate small stars. Thick lines, chibi rounded, ages 3-5 friendly. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-arcticfox",
+      "filename": "coloring-arcticfox.png",
+      "used_in": "chapter 2 coloring page — arctic fox family",
+      "prompt": "A children's coloring book page of a cute chibi arctic fox family — one big fluffy fox parent and one smaller baby fox curled beside it. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. Each fox has a pointed triangular face, two triangular ears with inner ear regions, big eyes, a tiny nose, a fluffy cheek/chest patch as a clearly separate region, four legs, and a big bushy tail with a contrasting tip region. Below them a snowy ground shape, above 4-5 separate snowflakes. Thick lines, chibi rounded, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
+      "id": "coloring-underwater",
+      "filename": "coloring-underwater.png",
+      "used_in": "chapter 2 coloring page — underwater coral scene",
+      "prompt": "A children's coloring book page of a cheerful underwater coral reef scene. THICK BOLD SOLID BLACK outlines on PURE WHITE background, every region fully enclosed by unbroken lines. Include: 3-4 different happy smiling fish of varying shapes (round, long, with stripes), one starfish with a face, one smiling octopus with 8 clearly separate tentacles, 2-3 coral branches or sea plants with separable segments, 5-6 separate small bubbles, and a sandy seabed ground line. Thick toddler coloring book lines, chibi friendly style, ages 3-5. NO shading, NO colors, ONLY black lines on white. No text."
+    },
+    {
       "id": "princess",
       "filename": "princess.png",
       "used_in": "ending scene character",

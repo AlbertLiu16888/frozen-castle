@@ -9,19 +9,38 @@ export interface Page {
   id: string;
   title: string;
   src: string;
+  chapter: 1 | 2;
 }
 
 export const PAGES: Page[] = [
-  { id: 'castle',    title: '魔法城堡', src: './assets/coloring-castle.png' },
-  { id: 'princess',  title: '冰雪公主', src: './assets/coloring-princess.png' },
-  { id: 'sprite',    title: '小雪精靈', src: './assets/coloring-sprite.png' },
-  { id: 'snowflake', title: '大雪花',   src: './assets/coloring-snowflake.png' },
-  { id: 'wand',      title: '魔法棒',   src: './assets/coloring-wand.png' },
-  { id: 'crown',     title: '皇冠',     src: './assets/coloring-crown.png' },
-  { id: 'throne',    title: '冰寶座',   src: './assets/coloring-throne.png' },
-  { id: 'sleigh',    title: '馴鹿雪橇', src: './assets/coloring-sleigh.png' },
-  { id: 'forest',    title: '雪地森林', src: './assets/coloring-forest.png' },
-  { id: 'heart',     title: '愛心花園', src: './assets/coloring-heart.png' },
+  // Chapter 1 — 冰雪魔法
+  { id: 'castle',    title: '魔法城堡', src: './assets/coloring-castle.png',    chapter: 1 },
+  { id: 'princess',  title: '冰雪公主', src: './assets/coloring-princess.png',  chapter: 1 },
+  { id: 'sprite',    title: '小雪精靈', src: './assets/coloring-sprite.png',    chapter: 1 },
+  { id: 'snowflake', title: '大雪花',   src: './assets/coloring-snowflake.png', chapter: 1 },
+  { id: 'wand',      title: '魔法棒',   src: './assets/coloring-wand.png',      chapter: 1 },
+  { id: 'crown',     title: '皇冠',     src: './assets/coloring-crown.png',     chapter: 1 },
+  { id: 'throne',    title: '冰寶座',   src: './assets/coloring-throne.png',    chapter: 1 },
+  { id: 'sleigh',    title: '馴鹿雪橇', src: './assets/coloring-sleigh.png',    chapter: 1 },
+  { id: 'forest',    title: '雪地森林', src: './assets/coloring-forest.png',    chapter: 1 },
+  { id: 'heart',     title: '愛心花園', src: './assets/coloring-heart.png',     chapter: 1 },
+
+  // Chapter 2 — 奇幻世界
+  { id: 'rainbow',    title: '彩虹天空', src: './assets/coloring-rainbow.png',    chapter: 2 },
+  { id: 'unicorn',    title: '獨角獸',   src: './assets/coloring-unicorn.png',    chapter: 2 },
+  { id: 'butterfly',  title: '蝴蝶花園', src: './assets/coloring-butterfly.png',  chapter: 2 },
+  { id: 'penguin',    title: '企鵝家族', src: './assets/coloring-penguin.png',    chapter: 2 },
+  { id: 'rocket',     title: '太空火箭', src: './assets/coloring-rocket.png',     chapter: 2 },
+  { id: 'mermaid',    title: '美人魚',   src: './assets/coloring-mermaid.png',    chapter: 2 },
+  { id: 'cupcake',    title: '杯子蛋糕', src: './assets/coloring-cupcake.png',    chapter: 2 },
+  { id: 'dragon',     title: '小龍寶寶', src: './assets/coloring-dragon.png',     chapter: 2 },
+  { id: 'arcticfox',  title: '北極狐',   src: './assets/coloring-arcticfox.png',  chapter: 2 },
+  { id: 'underwater', title: '海底世界', src: './assets/coloring-underwater.png', chapter: 2 },
+];
+
+export const CHAPTERS = [
+  { id: 1 as const, title: '第一章 · 冰雪魔法' },
+  { id: 2 as const, title: '第二章 · 奇幻世界' },
 ];
 
 const KEY = 'frozen-castle-progress-v1';
@@ -42,7 +61,7 @@ export function getProgress(): ProgressMap {
 export function markDone(pageId: string): void {
   const p = getProgress();
   p[pageId] = true;
-  try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* quota or privacy */ }
+  try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* quota */ }
 }
 
 export function resetProgress(): void {

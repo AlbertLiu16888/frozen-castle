@@ -1,11 +1,11 @@
 /**
  * Audio: procedural background music via Web Audio + voice prompts via SpeechSynthesis.
  *
- * Design:
- * - Zero audio files. Music is a short looping arpeggio of bells + bass pad.
- * - Voice uses the browser's built-in Chinese TTS (zh-TW preferred).
- * - Everything starts only after the first user gesture (autoplay policy).
- * - A single mute toggle silences both music and voice.
+ * The voice bank calls the player by name (小仙貝 / 仙貝 / 貝貝 / 嘉臻) and
+ * mixes in positive parenting reinforcement — praising the kid's drawing while
+ * gently prompting good habits (brushing teeth, sharing toys, etc.).
+ *
+ * Zero audio files. Mute toggle silences music + voice.
  */
 
 let ctx: AudioContext | null = null;
@@ -26,20 +26,14 @@ function ensureCtx(): AudioContext | null {
     master.gain.value = muted ? 0 : 1;
     master.connect(ctx.destination);
     musicGain = ctx.createGain();
-    musicGain.gain.value = 0.12; // keep music soft under voice
+    musicGain.gain.value = 0.12;
     musicGain.connect(master);
   }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
 }
 
-function playTone(
-  freq: number,
-  startTime: number,
-  duration: number,
-  type: OscillatorType,
-  peak: number,
-): void {
+function playTone(freq: number, startTime: number, duration: number, type: OscillatorType, peak: number): void {
   if (!ctx || !musicGain) return;
   const o = ctx.createOscillator();
   const g = ctx.createGain();
@@ -59,17 +53,16 @@ export function startMusic(): void {
   if (!c) return;
   musicStarted = true;
 
-  // Pentatonic-ish bell melody — magical, child-friendly
   const melody = [
-    523.25, 659.25, 783.99, 987.77, // C5 E5 G5 B5
-    1046.5, 987.77, 783.99, 659.25, // C6 B5 G5 E5
-    523.25, 659.25, 880.00, 783.99, // C5 E5 A5 G5
-    659.25, 523.25, 659.25, 783.99, // E5 C5 E5 G5
+    523.25, 659.25, 783.99, 987.77,
+    1046.5, 987.77, 783.99, 659.25,
+    523.25, 659.25, 880.00, 783.99,
+    659.25, 523.25, 659.25, 783.99,
   ];
-  const bass = [130.81, 164.81, 196.00, 174.61]; // C3 E3 G3 F3
+  const bass = [130.81, 164.81, 196.00, 174.61];
 
-  const BEAT = 0.45; // seconds per melody note
-  const CHUNK = 16; // schedule this many notes per batch
+  const BEAT = 0.45;
+  const CHUNK = 16;
   let step = 0;
 
   const schedule = () => {
@@ -107,7 +100,7 @@ export function isMuted(): boolean {
   return muted;
 }
 
-/* -------- Voice prompts via Web Speech API -------- */
+/* ---------------- Voice ---------------- */
 
 let cachedVoice: SpeechSynthesisVoice | null = null;
 let voicesReady = false;
@@ -135,18 +128,16 @@ function pickChineseVoice(): SpeechSynthesisVoice | null {
 }
 
 if (typeof window !== 'undefined' && window.speechSynthesis) {
-  // Voices load lazily in Chrome
   window.speechSynthesis.addEventListener('voiceschanged', () => {
     cachedVoice = null;
     voicesReady = true;
   });
-  // Initial check in case voices are already available
   if (window.speechSynthesis.getVoices().length > 0) voicesReady = true;
 }
 
 export function speak(text: string, opts?: { rate?: number; pitch?: number }): void {
   if (muted || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel(); // avoid queue buildup on rapid events
+  window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'zh-TW';
   u.rate = opts?.rate ?? 0.95;
@@ -156,12 +147,88 @@ export function speak(text: string, opts?: { rate?: number; pitch?: number }): v
   window.speechSynthesis.speak(u);
 }
 
-/** Speak one random line from a list. Useful for filler reactions. */
-export function speakRandom(lines: string[]): void {
-  speak(lines[Math.floor(Math.random() * lines.length)]);
-}
-
-/** Defer a speak call briefly — useful when voices haven't loaded yet on page open. */
 export function speakLater(text: string, delay = 300): void {
   setTimeout(() => speak(text), voicesReady ? 0 : delay);
+}
+
+/* ---------------- Personalized praise bank ---------------- */
+
+const NAMES = ['小仙貝', '仙貝', '貝貝', '嘉臻'];
+
+export function pickName(): string {
+  return NAMES[Math.floor(Math.random() * NAMES.length)];
+}
+
+/**
+ * Positive-reinforcement lines. Each links great drawing to a good-habit behavior
+ * (eating by oneself, brushing teeth, putting toys away, etc.).
+ * {name} gets replaced with a random nickname.
+ */
+const PRAISE_LINES: string[] = [
+  '{name}畫得好漂亮！一定也會自己吃飯飯對不對？好棒！',
+  '{name}好厲害喔，會自己刷牙嗎？超棒的！',
+  '哇！{name}塗得這麼美，一定會自己收玩具！',
+  '{name}真的好棒，一定很會照顧弟弟！',
+  '{name}畫得好棒，也會跟弟弟分享玩具，對不對？',
+  '{name}好美喔，洗手有沒有洗得乾乾淨淨？',
+  '{name}好聰明！學英文一定也超快！',
+  '{name}這麼厲害，爸爸媽媽一定超驕傲！',
+  '{name}真的好棒！會自己穿衣服了嗎？',
+  '哇！{name}這麼會塗色，自己吃飯也沒問題！',
+  '{name}好乖，記得洗手手才能吃東西喔！',
+  '{name}塗得超美！今天也要記得收玩具喔。',
+  '哇！{name}是小天才耶！',
+  '{name}好厲害，也要教弟弟一起畫畫喔！',
+  '{name}畫得真棒！自己刷牙才有亮晶晶的牙齒！',
+  '{name}超棒的！再來一個顏色看看！',
+  '{name}塗得好有創意！要分享給弟弟看喔！',
+  '{name}真勇敢！要不要試試不一樣的顏色？',
+  '哇！{name}是最厲害的小畫家！',
+  '{name}好美的畫！爸爸媽媽一定會拍照給阿公阿嬤看！',
+];
+
+const SMALL_CHEERS: string[] = [
+  '好漂亮！',
+  '哇喔！',
+  '真美！',
+  '好棒！',
+  '厲害！',
+  '超棒的！',
+  '再一個！',
+];
+
+let lastPraiseAt = 0;
+const PRAISE_GAP_MS = 3500;   // big praise line every ~3.5s
+let lastCheerAt = 0;
+const CHEER_GAP_MS = 1200;    // tiny cheers more often
+
+function render(template: string): string {
+  return template.replaceAll('{name}', pickName());
+}
+
+/**
+ * Big praise with name + behavior reinforcement. Throttled so it doesn't overrun.
+ * Returns true if a line was actually spoken.
+ */
+export function speakPraise(): boolean {
+  const now = Date.now();
+  if (now - lastPraiseAt < PRAISE_GAP_MS) return false;
+  lastPraiseAt = now;
+  const tpl = PRAISE_LINES[Math.floor(Math.random() * PRAISE_LINES.length)];
+  speak(render(tpl));
+  return true;
+}
+
+/** Short cheer (no name), for rapid feedback. Lightly throttled. */
+export function speakCheer(): void {
+  const now = Date.now();
+  if (now - lastCheerAt < CHEER_GAP_MS) return;
+  lastCheerAt = now;
+  const line = SMALL_CHEERS[Math.floor(Math.random() * SMALL_CHEERS.length)];
+  speak(line);
+}
+
+/** Speak a named line directly: `speakNamed('${name}快來看！')` */
+export function speakNamed(template: string): void {
+  speak(render(template));
 }

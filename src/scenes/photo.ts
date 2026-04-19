@@ -8,7 +8,7 @@
 import { saveOrShare, getArtwork } from '../artwork';
 import { getSelectedPage } from '../state';
 import { PAGES } from '../progress';
-import { speak } from '../audio';
+import { speak, speakNamed } from '../audio';
 
 export function renderPhoto(onBack: () => void): HTMLElement {
   const scene = document.createElement('div');
@@ -175,7 +175,7 @@ export function renderPhoto(onBack: () => void): HTMLElement {
   });
 
   scene.addEventListener('scene:enter', () => {
-    speak('來跟你的畫作一起拍照吧！');
+    speakNamed('{name}來跟你的畫作一起拍照吧！');
     preview.style.display = 'none';
     lastSnapDataUrl = null;
     loadArtworkOverlay();

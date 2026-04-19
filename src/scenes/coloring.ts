@@ -1,30 +1,25 @@
 /**
- * Scene 2: Magic Wand Coloring — storybook mode
+ * Scene: Magic Wand Coloring — pencil-drag edition
  *
- * On each entry, picks a random Grok-generated coloring page from ./assets/coloring-*.png.
- * The page is loaded to a canvas, binarized, and scanline flood-fill handles each tap.
+ * Pencils are draggable. Grab a pencil, drag it over the castle, release, and
+ * the region under the tip gets flood-filled. The pencil ghost follows the
+ * pointer at ~75% opacity so the kid can see through it.
  *
- * Completion rule: ALL white space must be colored. We track the remaining "unpainted"
- * pixel count; once it drops below 2% of the initial white area, the done button appears.
- *
- * Fallback: if no coloring pages are available (Grok not run yet), render the
- * hand-crafted SVG castle with clickable regions.
+ * Completion: the "done" button appears once the kid has used at least 3
+ * different pencil colors on this page — no need to fill every last pixel.
  */
 
-import { speak, speakRandom } from '../audio';
+import { speakPraise, speakCheer, speakNamed } from '../audio';
 import { PAGES, markDone } from '../progress';
 import { getSelectedPage } from '../state';
 import { saveArtwork, exportCanvasToDataUrl, saveOrShare } from '../artwork';
 
-const COLORS = ['#7dd3fc', '#c4b5fd', '#fbcfe8', '#ffffff', '#fde68a', '#86efac', '#fca5a5', '#a5f3fc'];
-
-// A region is "colored enough" when less than this fraction of the initial white area remains.
-// 5% tolerance covers anti-aliased edge pixels and small unfillable slivers from line crossings.
-const DONE_THRESHOLD = 0.05;
+const COLORS = ['#7dd3fc', '#c4b5fd', '#fbcfe8', '#fde68a', '#86efac', '#fca5a5', '#a78bfa', '#f97316'];
+const MIN_UNIQUE_COLORS = 3;
 
 export function renderColoring(
   onDone: () => void,
-  onBack: () => void,
+  _onBack: () => void,
   onPhoto: () => void,
 ): HTMLElement {
   const scene = document.createElement('div');
@@ -37,34 +32,27 @@ export function renderColoring(
 
   const hint = document.createElement('div');
   hint.className = 'scene-hint';
-  hint.textContent = '把整張圖都塗滿顏色 🎨✨';
+  hint.textContent = '拿起色筆，拖到畫上放開上色 ✏️✨';
 
   const stage = document.createElement('div');
   stage.className = 'color-stage';
 
-  // Back to gallery button (top right of stage)
   const backBtn = document.createElement('button');
   backBtn.className = 'next-page-btn';
   backBtn.textContent = '⬅️ 返回總覽';
-  backBtn.addEventListener('click', () => {
-    onBack();
-  });
+  backBtn.addEventListener('click', () => _onBack());
 
   let currentPageId: string | null = null;
+  const usedColors = new Set<string>();
 
-  const palette = document.createElement('div');
-  palette.className = 'palette';
-
-  const wand = document.createElement('div');
-  wand.className = 'wand';
-  wand.innerHTML = '<span class="star">✨</span>';
+  const rack = document.createElement('div');
+  rack.className = 'pencil-rack';
 
   const doneBtn = document.createElement('button');
   doneBtn.className = 'big-button done-btn';
   doneBtn.textContent = '完成了！✨';
   doneBtn.style.display = 'none';
 
-  // "Done" modal panel with save / photo / continue options
   const donePanel = document.createElement('div');
   donePanel.className = 'done-panel';
   donePanel.style.display = 'none';
@@ -86,42 +74,50 @@ export function renderColoring(
 
   let lastArtworkDataUrl = '';
 
-  const state = {
-    selected: COLORS[0],
-    initialWhite: 0,
-    reset: () => {},
+  // Fill handler — called from pencil release
+  const applyFill = (color: string, clientX: number, clientY: number): void => {
+    const canvas = stage.querySelector<HTMLCanvasElement>('.castle-canvas');
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return;
+    const cx = Math.floor(((clientX - rect.left) / rect.width) * canvas.width);
+    const cy = Math.floor(((clientY - rect.top) / rect.height) * canvas.height);
+    const ctx = canvas.getContext('2d')!;
+    const filled = floodFill(ctx, canvas.width, canvas.height, cx, cy, hexToRgb(color));
+    if (filled > 200) {
+      sparkleAt(stage, clientX - stage.getBoundingClientRect().left, clientY - stage.getBoundingClientRect().top);
+      playDing();
+      usedColors.add(color);
+      if (usedColors.size >= MIN_UNIQUE_COLORS && doneBtn.style.display === 'none') {
+        doneBtn.style.display = '';
+        speakNamed('{name}用了好多顏色！可以按完成了喔！');
+      } else if (!speakPraise()) {
+        speakCheer();
+      }
+    }
   };
 
+  // Build the pencil rack
   for (const c of COLORS) {
-    const sw = document.createElement('button');
-    sw.className = 'swatch';
-    sw.style.background = c;
-    sw.dataset.color = c;
-    if (c === state.selected) sw.classList.add('active');
-    sw.addEventListener('click', () => {
-      state.selected = c;
-      palette.querySelectorAll('.swatch').forEach((s) => s.classList.remove('active'));
-      sw.classList.add('active');
-      wand.style.color = c;
-    });
-    palette.appendChild(sw);
+    rack.appendChild(makePencil(c, applyFill));
   }
 
   function loadPage(pageId: string): void {
     currentPageId = pageId;
     doneBtn.style.display = 'none';
+    usedColors.clear();
     const meta = PAGES.find((p) => p.id === pageId);
     const src = meta ? meta.src : PAGES[0].src;
     const img = new Image();
-    img.onload = () => setupCanvas(stage, img, state, doneBtn, backBtn);
-    img.onerror = () => setupSvg(stage, state, doneBtn);
+    img.onload = () => setupCanvas(stage, img);
+    img.onerror = () => setupFallback(stage);
     img.src = src;
   }
 
-  scene.append(bg, hint, stage, backBtn, palette, wand, doneBtn, donePanel);
+  scene.append(bg, hint, stage, backBtn, rack, doneBtn, donePanel);
 
   scene.addEventListener('scene:enter', () => {
-    speak('把整張圖都塗滿顏色，就算完成囉！');
+    speakNamed('{name}挑一枝色筆，拖到畫上放開就會上色喔！');
     donePanel.style.display = 'none';
     const pageId = getSelectedPage() ?? PAGES[0].id;
     loadPage(pageId);
@@ -144,6 +140,7 @@ export function renderColoring(
     markDone(currentPageId);
     doneBtn.style.display = 'none';
     donePanel.style.display = '';
+    speakPraise();
   });
 
   saveBtn.addEventListener('click', async () => {
@@ -165,17 +162,93 @@ export function renderColoring(
   return scene;
 }
 
-/* ---------------- Canvas flood-fill path (primary) ---------------- */
+/* ---------------- Pencil (draggable) ---------------- */
 
-function setupCanvas(
-  stage: HTMLElement,
-  lineart: HTMLImageElement,
-  state: { selected: string; initialWhite: number; reset: () => void },
-  doneBtn: HTMLButtonElement,
-  nextBtn: HTMLButtonElement,
-): void {
+// Tip position inside the 60x200 viewBox. Ghost is sized to match.
+const PENCIL_W = 60;
+const PENCIL_H = 200;
+const TIP_X = 30;
+const TIP_Y = 195;
+
+function pencilSvg(): string {
+  return `
+    <svg viewBox="0 0 ${PENCIL_W} ${PENCIL_H}" class="pencil-svg" preserveAspectRatio="xMidYMid meet">
+      <!-- eraser top -->
+      <rect x="12" y="5" width="36" height="26" fill="#f472b6" stroke="#1e1b4b" stroke-width="3" rx="8"/>
+      <!-- metal band -->
+      <rect x="9" y="28" width="42" height="12" fill="#d1d5db" stroke="#1e1b4b" stroke-width="3"/>
+      <!-- body -->
+      <rect x="10" y="38" width="40" height="102" fill="var(--c)" stroke="#1e1b4b" stroke-width="3" rx="2"/>
+      <!-- wood cone -->
+      <polygon points="10,140 50,140 30,170" fill="#fde68a" stroke="#1e1b4b" stroke-width="3" stroke-linejoin="round"/>
+      <!-- tip -->
+      <polygon points="20,162 40,162 30,195" fill="var(--c)" stroke="#1e1b4b" stroke-width="3" stroke-linejoin="round"/>
+    </svg>
+  `;
+}
+
+function makePencil(color: string, onFill: (color: string, x: number, y: number) => void): HTMLElement {
+  const btn = document.createElement('button');
+  btn.className = 'pencil';
+  btn.style.setProperty('--c', color);
+  btn.dataset.color = color;
+  btn.innerHTML = pencilSvg();
+
+  let ghost: HTMLElement | null = null;
+  let pointerId = -1;
+
+  const createGhost = (x: number, y: number) => {
+    ghost = document.createElement('div');
+    ghost.className = 'pencil-ghost';
+    ghost.style.setProperty('--c', color);
+    ghost.innerHTML = pencilSvg();
+    ghost.style.left = (x - TIP_X) + 'px';
+    ghost.style.top = (y - TIP_Y) + 'px';
+    document.body.appendChild(ghost);
+  };
+
+  const moveGhost = (x: number, y: number) => {
+    if (!ghost) return;
+    ghost.style.left = (x - TIP_X) + 'px';
+    ghost.style.top = (y - TIP_Y) + 'px';
+  };
+
+  const cleanup = () => {
+    if (ghost) { ghost.remove(); ghost = null; }
+    btn.classList.remove('is-held');
+    pointerId = -1;
+  };
+
+  btn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    pointerId = e.pointerId;
+    btn.setPointerCapture(pointerId);
+    btn.classList.add('is-held');
+    createGhost(e.clientX, e.clientY);
+  });
+
+  btn.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== pointerId) return;
+    moveGhost(e.clientX, e.clientY);
+  });
+
+  const finish = (e: PointerEvent) => {
+    if (e.pointerId !== pointerId) return;
+    try { btn.releasePointerCapture(pointerId); } catch { /* ignore */ }
+    onFill(color, e.clientX, e.clientY);
+    cleanup();
+  };
+
+  btn.addEventListener('pointerup', finish);
+  btn.addEventListener('pointercancel', () => cleanup());
+
+  return btn;
+}
+
+/* ---------------- Canvas flood-fill ---------------- */
+
+function setupCanvas(stage: HTMLElement, lineart: HTMLImageElement): void {
   stage.innerHTML = '';
-  stage.appendChild(nextBtn);
 
   const canvas = document.createElement('canvas');
   canvas.className = 'castle-canvas';
@@ -183,35 +256,18 @@ function setupCanvas(
   canvas.width = lineart.naturalWidth;
   canvas.height = lineart.naturalHeight;
 
-  const paintBase = () => {
-    ctx.drawImage(lineart, 0, 0);
-    binarize(ctx, canvas.width, canvas.height);
-    state.initialWhite = countWhitePixels(ctx, canvas.width, canvas.height);
-  };
-  paintBase();
-  state.reset = paintBase;
-
-  canvas.addEventListener('click', (ev) => {
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.floor(((ev.clientX - rect.left) / rect.width) * canvas.width);
-    const y = Math.floor(((ev.clientY - rect.top) / rect.height) * canvas.height);
-    const filled = floodFill(ctx, canvas.width, canvas.height, x, y, hexToRgb(state.selected));
-    if (filled > 200) {
-      sparkleAt(stage, ev.clientX - stage.getBoundingClientRect().left, ev.clientY - stage.getBoundingClientRect().top);
-      playDing();
-      const remaining = countWhitePixels(ctx, canvas.width, canvas.height);
-      if (remaining < state.initialWhite * DONE_THRESHOLD) {
-        doneBtn.style.display = '';
-        speak('哇！你把整張都塗滿了，好厲害！');
-      } else {
-        const percent = 1 - remaining / state.initialWhite;
-        if (percent > 0.6 && percent < 0.62) speak('快塗完囉，加油！');
-        else speakRandom(['好漂亮！', '哇喔！', '真美！', '好棒！']);
-      }
-    }
-  });
+  ctx.drawImage(lineart, 0, 0);
+  binarize(ctx, canvas.width, canvas.height);
 
   stage.appendChild(canvas);
+}
+
+function setupFallback(stage: HTMLElement): void {
+  stage.innerHTML = '';
+  const msg = document.createElement('div');
+  msg.className = 'coloring-fallback';
+  msg.textContent = '圖片讀不到 😢 請回總覽再試一次。';
+  stage.appendChild(msg);
 }
 
 function binarize(ctx: CanvasRenderingContext2D, w: number, h: number): void {
@@ -229,16 +285,6 @@ function binarize(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   ctx.putImageData(img, 0, 0);
 }
 
-function countWhitePixels(ctx: CanvasRenderingContext2D, w: number, h: number): number {
-  const img = ctx.getImageData(0, 0, w, h);
-  const d = img.data;
-  let count = 0;
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i] > 240 && d[i + 1] > 240 && d[i + 2] > 240) count++;
-  }
-  return count;
-}
-
 function floodFill(
   ctx: CanvasRenderingContext2D,
   w: number,
@@ -248,10 +294,8 @@ function floodFill(
   [fr, fg, fb]: [number, number, number],
 ): number {
   if (sx < 0 || sx >= w || sy < 0 || sy >= h) return 0;
-
   const img = ctx.getImageData(0, 0, w, h);
   const d = img.data;
-
   const idx = (x: number, y: number) => (y * w + x) * 4;
   const fillable = (x: number, y: number): boolean => {
     const i = idx(x, y);
@@ -263,7 +307,6 @@ function floodFill(
     const i = idx(x, y);
     d[i] = fr; d[i + 1] = fg; d[i + 2] = fb; d[i + 3] = 255;
   };
-
   if (!fillable(sx, sy)) return 0;
 
   let count = 0;
@@ -301,68 +344,6 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
-/* ---------------- SVG fallback (when Grok hasn't been run) ---------------- */
-
-const REGIONS: { id: string; path: string }[] = [
-  { id: 'tower-l',  path: 'M120,240 L120,460 L220,460 L220,240 L170,200 Z' },
-  { id: 'tower-r',  path: 'M580,240 L580,460 L680,460 L680,240 L630,200 Z' },
-  { id: 'body',     path: 'M220,280 L220,460 L580,460 L580,280 L400,200 Z' },
-  { id: 'gate',     path: 'M360,380 Q360,340 400,340 Q440,340 440,380 L440,460 L360,460 Z' },
-  { id: 'spire-l',  path: 'M120,240 L170,140 L220,240 Z' },
-  { id: 'spire-m',  path: 'M220,280 L400,120 L580,280 Z' },
-  { id: 'spire-r',  path: 'M580,240 L630,140 L680,240 Z' },
-  { id: 'window',   path: 'M370,280 Q370,250 400,250 Q430,250 430,280 L430,320 L370,320 Z' },
-];
-
-function setupSvg(
-  stage: HTMLElement,
-  state: { selected: string; reset: () => void },
-  doneBtn: HTMLButtonElement,
-): void {
-  stage.innerHTML = '';
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('viewBox', '0 0 800 500');
-  svg.setAttribute('class', 'castle-svg');
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-
-  const els: SVGPathElement[] = [];
-  const filled = new Set<string>();
-
-  for (const r of REGIONS) {
-    const p = document.createElementNS(svgNS, 'path');
-    p.setAttribute('d', r.path);
-    p.setAttribute('fill', '#f8fafc');
-    p.setAttribute('stroke', '#1e1b4b');
-    p.setAttribute('stroke-width', '4');
-    p.setAttribute('stroke-linejoin', 'round');
-    p.setAttribute('class', 'region');
-    p.addEventListener('click', (ev) => {
-      p.setAttribute('fill', state.selected);
-      filled.add(r.id);
-      sparkleAt(stage, (ev as MouseEvent).clientX - stage.getBoundingClientRect().left, (ev as MouseEvent).clientY - stage.getBoundingClientRect().top);
-      playDing();
-      if (filled.size >= REGIONS.length) {
-        doneBtn.style.display = '';
-        speak('你塗得好漂亮！');
-      } else {
-        speakRandom(['好漂亮！', '哇喔！', '真美！', '好棒！']);
-      }
-    });
-    svg.appendChild(p);
-    els.push(p);
-  }
-
-  state.reset = () => {
-    filled.clear();
-    els.forEach((e) => e.setAttribute('fill', '#f8fafc'));
-  };
-
-  stage.appendChild(svg);
-}
-
-/* ---------------- shared effects ---------------- */
-
 function sparkleAt(stage: HTMLElement, x: number, y: number): void {
   for (let i = 0; i < 10; i++) {
     const s = document.createElement('div');
@@ -386,17 +367,17 @@ function getAudio(): AudioContext | null {
 }
 
 function playDing(): void {
-  const ctx = getAudio();
-  if (!ctx) return;
-  const o = ctx.createOscillator();
-  const g = ctx.createGain();
+  const a = getAudio();
+  if (!a) return;
+  const o = a.createOscillator();
+  const g = a.createGain();
   o.type = 'sine';
   const f = 660 + Math.random() * 400;
-  o.frequency.setValueAtTime(f, ctx.currentTime);
-  o.frequency.exponentialRampToValueAtTime(f * 1.5, ctx.currentTime + 0.15);
-  g.gain.setValueAtTime(0.2, ctx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-  o.connect(g).connect(ctx.destination);
+  o.frequency.setValueAtTime(f, a.currentTime);
+  o.frequency.exponentialRampToValueAtTime(f * 1.5, a.currentTime + 0.15);
+  g.gain.setValueAtTime(0.2, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.3);
+  o.connect(g).connect(a.destination);
   o.start();
-  o.stop(ctx.currentTime + 0.3);
+  o.stop(a.currentTime + 0.3);
 }
