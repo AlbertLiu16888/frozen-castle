@@ -736,6 +736,32 @@ body {
   backdrop-filter: blur(6px);
 }
 
+.photo-countdown {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14rem;
+  line-height: 1;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 0 40px rgba(251, 113, 133, 0.9), 0 10px 24px rgba(0,0,0,0.7);
+  z-index: 4;
+  pointer-events: none;
+  font-family: "Comic Sans MS", "Chalkboard SE", sans-serif;
+}
+
+.photo-countdown.pop {
+  animation: countdown-pop 900ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes countdown-pop {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  25%  { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+  70%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.2; }
+}
+
 .photo-snap {
   position: absolute;
   bottom: calc(1rem + var(--sa-bottom));
@@ -773,16 +799,33 @@ body {
   box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
-.photo-save,
-.photo-retake {
-  min-width: 160px;
-  min-height: 70px;
-  font-size: 1.4rem;
+.photo-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  justify-content: center;
 }
 
-.photo-retake {
-  background: linear-gradient(135deg, #c4b5fd, #a78bfa);
-  color: white;
+.photo-save,
+.photo-retake,
+.photo-preview-back {
+  min-width: 150px;
+  min-height: 70px;
+  font-size: 1.3rem;
+}
+
+.photo-save { background: linear-gradient(135deg, #fde68a, #fca5a5); color: var(--night); }
+.photo-retake { background: linear-gradient(135deg, #c4b5fd, #a78bfa); color: white; }
+.photo-preview-back { background: linear-gradient(135deg, #86efac, #7dd3fc); color: var(--night); }
+
+.photo-saved-msg {
+  color: #22c55e;
+  background: white;
+  padding: 0.5rem 1.4rem;
+  border-radius: 9999px;
+  font-size: 1.3rem;
+  font-weight: 900;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
 }
 
 .photo-fallback {
